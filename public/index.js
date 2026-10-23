@@ -108,7 +108,7 @@ function articleHTML(article) {
       <div class="article-title">${escapeHTML(article.title)}</div>
       <div class="article-desc">${escapeHTML(article.description)}</div>
       <div class="article-footer">
-        <span class="article-time">${timeAgo(article.date)}</span>
+        <span class="article-time">${timeAgo(article.date)}${article.source ? ' · ' + escapeHTML(article.source) : ''}</span>
         <a href="${escapeHTML(article.link)}" target="_blank" rel="noopener" class="article-link">Source →</a>
       </div>
     </div>

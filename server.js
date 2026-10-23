@@ -5,11 +5,20 @@ const RSSParser = require('rss-parser');
 const Database = require('better-sqlite3');
 const fs = require('fs');
 const path = require('path');
+const rateLimit = require('express-rate-limit');
 
 const parser = new RSSParser({ timeout: 10000 });
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+app.use('/api', rateLimit({
+  windowMs: 60 * 1000,
+  limit: 120,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests, slow down' }
+}));
 
 app.use(express.static('public'));
 
@@ -240,10 +249,6 @@ async function syncFrontline() {
     syncingFrontline = false;
   }
 }
-
-app.get('/api/test', (req, res) => {
-  res.json({ message: 'Server is working!' });
-});
 
 app.get('/api/frontline', (req, res) => {
   const latest = loadLatestFrontline();
