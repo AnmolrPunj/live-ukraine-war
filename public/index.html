@@ -1,27 +1,42 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ukraine War Map</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-    <link rel="stylesheet" href="style.css">
-    <link rel="icon" href="/images/favicon.ico">
-    <link rel="apple-touch-icon" href="/images/apple-touch-icon.png">
-    <link rel="manifest" href="/images/site.webmanifest">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ukraine War Map</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="/images/favicon.ico">
+  <link rel="apple-touch-icon" href="/images/apple-touch-icon.png">
+  <link rel="manifest" href="/images/site.webmanifest">
 </head>
 <body>
-    <div id="sidebar">
-      <div id="sidebar-header">
-        <span id="sidebar-title"></span>
-        <button id="sidebar-close">✕</button>
-      </div>
-      <div id="sidebar-content"></div>
+  <div id="sidebar">
+    <div id="sidebar-header">
+      <div id="sidebar-title"></div>
+      <button id="sidebar-close">×</button>
     </div>
+    <div id="sidebar-updated">Latest reports</div>
+    <div id="sidebar-content"></div>
+  </div>
 
-    <div id="map"></div>
+  <div id="legend">
+    <div class="legend-title">Borders</div>
+    <div class="legend-item" style="color:#B8960C">Ukraine border</div>
+    <div class="legend-item" style="color:#FF4444">Russia border</div>
+    <div class="legend-item" style="color:#CC0000">Russian occupied territory</div>
+    <div class="legend-divider"></div>
+    <div class="legend-title">Show reports</div>
+    <div class="legend-item filter active" data-filter="all" style="color:#111">All</div>
+    <div class="legend-item filter" data-filter="military" style="color:#CC0000">Military / Combat</div>
+    <div class="legend-item filter" data-filter="diplomatic" style="color:#4A90D9">Diplomatic / Political</div>
+    <div class="legend-item filter" data-filter="humanitarian" style="color:#E8A838">Humanitarian</div>
+    <div class="legend-note">Pin size = number of reports</div>
+  </div>
 
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="index.js"></script>
+  <div id="map"></div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="index.js"></script>
 </body>
 </html>

@@ -1,6 +1,6 @@
 const bounds = L.latLngBounds(
-    L.latLng(44.0, 22.0),  
-    L.latLng(52.5, 40.5) 
+    L.latLng(44.0, 22.0),
+    L.latLng(52.5, 40.5)
 );
 
 const map = L.map('map', {
@@ -8,56 +8,147 @@ const map = L.map('map', {
     maxBoundsViscosity: 1.0,
     minZoom: 5.5,
     maxZoom: 12
-}).setView([48.3794, 31.1656], 5.5);    
+}).setView([48.3794, 31.1656], 5.5);
 
 L.tileLayer('https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png', {
     attribution: '© Stadia Maps © OpenStreetMap contributors',
 }).addTo(map);
 
+const MARKER_STYLES = {
+  military: { color: '#CC0000', label: 'Military / Combat' },
+  diplomatic: { color: '#4A90D9', label: 'Diplomatic / Political' },
+  humanitarian: { color: '#E8A838', label: 'Humanitarian' }
+};
+
+const pinLayer = L.layerGroup().addTo(map);
+let allArticles = [];
+let activeFilter = 'all';
+let currentCity = null;
+
+function escapeHTML(str) {
+  return String(str || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
 function timeAgo(dateStr) {
-  if (!dateStr) return null;
-  const now = new Date();
+  if (!dateStr) return 'Date unknown';
   const then = new Date(dateStr);
-  if (isNaN(then)) return null;
-  const diff = Math.floor((now - then) / 1000);
+  if (isNaN(then)) return 'Date unknown';
+  const diff = Math.floor((Date.now() - then) / 1000);
   if (diff < 60) return `${diff} seconds ago`;
   if (diff < 3600) return `${Math.floor(diff / 60)} minutes ago`;
   if (diff < 86400) return `${Math.floor(diff / 3600)} hours ago`;
   return `${Math.floor(diff / 86400)} days ago`;
 }
 
-function openSidebar(group) {
-  const sidebar = document.getElementById('sidebar');
-  const sidebarTitle = document.getElementById('sidebar-title');
-  const sidebarContent = document.getElementById('sidebar-content');
+function dateValue(article) {
+  const t = new Date(article.date || 0).getTime();
+  return isNaN(t) ? 0 : t;
+}
 
-  sidebarTitle.textContent = `${group.city} — ${group.articles.length} article${group.articles.length > 1 ? 's' : ''}`;
+function visibleArticles() {
+  if (activeFilter === 'all') return allArticles;
+  return allArticles.filter(a => a.type === activeFilter);
+}
 
-  const sorted = [...group.articles].sort((a, b) => {
-    if (!a.date) return 1;
-    if (!b.date) return -1;
-    return new Date(b.date) - new Date(a.date);
+function groupByCity(list) {
+  const groups = {};
+  list.forEach(article => {
+    if (!groups[article.city]) groups[article.city] = [];
+    groups[article.city].push(article);
   });
+  return groups;
+}
 
-  sidebarContent.innerHTML = sorted.map(a => {
-    const time = timeAgo(a.date);
+function closeSidebar() {
+  currentCity = null;
+  document.getElementById('sidebar').classList.remove('open');
+}
+
+function openSidebar(city, articles) {
+  const sorted = [...articles].sort((a, b) => dateValue(b) - dateValue(a));
+  const filterLabel = activeFilter === 'all' ? '' : ` · ${MARKER_STYLES[activeFilter].label}`;
+
+  document.getElementById('sidebar-title').textContent = city.toUpperCase();
+  document.getElementById('sidebar-updated').textContent =
+    `${sorted.length} ${sorted.length === 1 ? 'report' : 'reports'}${filterLabel}`;
+
+  document.getElementById('sidebar-content').innerHTML = sorted.map(article => {
+    const style = MARKER_STYLES[article.type] || MARKER_STYLES.military;
     return `
       <div class="article-card">
-        <div class="article-title">${a.title}</div>
-        <div class="article-desc">${a.description}</div>
+        <div class="article-type" style="color:${style.color}">${style.label}</div>
+        <div class="article-title">${escapeHTML(article.title)}</div>
+        <div class="article-desc">${escapeHTML(article.description)}</div>
         <div class="article-footer">
-          <span class="article-time">${time || ''}</span>
-          <a href="${a.link}" target="_blank" class="article-link">Read Article</a>
+          <span class="article-time">${timeAgo(article.date)}</span>
+          <a href="${escapeHTML(article.link)}" target="_blank" rel="noopener" class="article-link">Source →</a>
         </div>
       </div>
     `;
   }).join('');
 
-  sidebar.classList.add('open');
+  document.getElementById('sidebar-content').scrollTop = 0;
+  document.getElementById('sidebar').classList.add('open');
 }
 
-document.getElementById('sidebar-close').addEventListener('click', () => {
-  document.getElementById('sidebar').classList.remove('open');
+function render() {
+  pinLayer.clearLayers();
+  const groups = groupByCity(visibleArticles());
+
+  Object.entries(groups).forEach(([city, list]) => {
+    const radius = Math.min(5 + Math.sqrt(list.length) * 2.5, 18);
+    const lat = list[0].lat;
+    const lng = list[0].lng;
+
+    L.circleMarker([lat, lng], {
+      radius: radius,
+      fillColor: '#ffffff',
+      color: '#000000',
+      weight: 1.5,
+      fillOpacity: 0.9,
+      interactive: false
+    }).addTo(pinLayer);
+
+    L.circleMarker([lat, lng], {
+      radius: radius + 8,
+      fillColor: 'transparent',
+      color: 'transparent',
+      weight: 0,
+      fillOpacity: 0,
+      interactive: true,
+      bubblingMouseEvents: false
+    }).addTo(pinLayer).on('click', (e) => {
+      L.DomEvent.stopPropagation(e);
+      currentCity = city;
+      openSidebar(city, list);
+    });
+  });
+
+  if (currentCity) {
+    if (groups[currentCity]) {
+      openSidebar(currentCity, groups[currentCity]);
+    } else {
+      closeSidebar();
+    }
+  }
+}
+
+document.getElementById('sidebar-close').addEventListener('click', closeSidebar);
+
+const legend = document.getElementById('legend');
+L.DomEvent.disableClickPropagation(legend);
+
+document.querySelectorAll('.filter').forEach(el => {
+  el.addEventListener('click', () => {
+    activeFilter = el.dataset.filter;
+    document.querySelectorAll('.filter').forEach(f => f.classList.remove('active'));
+    el.classList.add('active');
+    render();
+  });
 });
 
 fetch('https://raw.githubusercontent.com/datasets/geo-countries/master/data/countries.geojson')
@@ -72,9 +163,8 @@ fetch('https://raw.githubusercontent.com/datasets/geo-countries/master/data/coun
         const name = feature.properties.ADMIN || feature.properties.name;
         if (name === 'Ukraine') {
           return { color: '#FFD700', weight: 2, fillOpacity: 0, fillColor: 'transparent' };
-        } else {
-          return { color: '#FF4444', weight: 2, fillOpacity: 0, fillColor: 'transparent' };
         }
+        return { color: '#FF4444', weight: 2, fillOpacity: 0, fillColor: 'transparent' };
       },
       interactive: false
     }).addTo(map);
@@ -98,37 +188,7 @@ fetch('/api/frontline')
 fetch('/api/news')
   .then(res => res.json())
   .then(articles => {
-    const grouped = {};
-    articles.forEach(article => {
-      const key = article.city;
-      if (!grouped[key]) {
-        grouped[key] = { lat: article.lat, lng: article.lng, city: article.city, articles: [] };
-      }
-      grouped[key].articles.push(article);
-    });
-
-    Object.values(grouped).forEach(group => {
-      L.circleMarker([group.lat, group.lng], {
-        radius: 5,
-        fillColor: '#CC0000',
-        color: '#fff',
-        weight: 1,
-        fillOpacity: 0.9,
-        interactive: false
-      }).addTo(map);
-
-      L.circleMarker([group.lat, group.lng], {
-        radius: 16,
-        fillColor: 'transparent',
-        color: 'transparent',
-        weight: 0,
-        fillOpacity: 0,
-        interactive: true,
-        bubblingMouseEvents: false
-      }).addTo(map).on('click', (e) => {
-        L.DomEvent.stopPropagation(e);
-        openSidebar(group);
-      });
-    });
+    allArticles = articles;
+    render();
   })
   .catch(err => console.error('Failed to load news:', err));
