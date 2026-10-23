@@ -48,10 +48,12 @@ let activeFilter = 'all';
 let currentCity = null;
 
 const sidebarState = {
+  mode: 'city',
   city: null,
   articles: [],
   exhausted: false,
-  loading: false
+  loading: false,
+  token: 0
 };
 
 function escapeHTML(str) {
@@ -92,6 +94,12 @@ function groupByCity(list) {
   return groups;
 }
 
+function sortNewestFirst(a, b) {
+  const diff = dateValue(b) - dateValue(a);
+  if (diff !== 0) return diff;
+  return (b.id || 0) - (a.id || 0);
+}
+
 function articleHTML(article) {
   const style = MARKER_STYLES[article.type] || MARKER_STYLES.military;
   return `
@@ -110,10 +118,12 @@ function articleHTML(article) {
 function paintSidebar() {
   const n = sidebarState.articles.length;
   const filterLabel = activeFilter === 'all' ? '' : ` · ${MARKER_STYLES[activeFilter].label}`;
+  const scopeLabel = sidebarState.mode === 'unlocated' ? ' · no place named' : '';
   const noun = n === 1 ? 'report' : 'reports';
   const shown = sidebarState.exhausted ? '' : ' shown';
 
-  document.getElementById('sidebar-updated').textContent = `${n} ${noun}${shown}${filterLabel}`;
+  document.getElementById('sidebar-updated').textContent =
+    `${n} ${noun}${shown}${filterLabel}${scopeLabel}`;
 
   let footer;
   if (sidebarState.exhausted) {
@@ -129,15 +139,19 @@ function paintSidebar() {
 
 function closeSidebar() {
   currentCity = null;
+  sidebarState.mode = 'city';
   sidebarState.city = null;
+  sidebarState.token++;
   document.getElementById('sidebar').classList.remove('open');
 }
 
 function openSidebar(city, articles) {
+  sidebarState.mode = 'city';
   sidebarState.city = city;
-  sidebarState.articles = [...articles].sort((a, b) => dateValue(b) - dateValue(a));
+  sidebarState.articles = [...articles].sort(sortNewestFirst);
   sidebarState.exhausted = false;
   sidebarState.loading = false;
+  sidebarState.token++;
 
   document.getElementById('sidebar-title').textContent = city.toUpperCase();
   paintSidebar();
@@ -145,28 +159,65 @@ function openSidebar(city, articles) {
   document.getElementById('sidebar').classList.add('open');
 }
 
-async function loadOlder() {
-  if (sidebarState.loading || sidebarState.exhausted || !sidebarState.city) return;
-  const city = sidebarState.city;
-  const last = sidebarState.articles[sidebarState.articles.length - 1];
-  if (!last) return;
-
+async function openUnlocated() {
+  currentCity = null;
+  sidebarState.mode = 'unlocated';
+  sidebarState.city = null;
+  sidebarState.articles = [];
+  sidebarState.exhausted = false;
   sidebarState.loading = true;
-  paintSidebar();
+  const token = ++sidebarState.token;
 
-  let url = `/api/news?city=${encodeURIComponent(city)}&before=${encodeURIComponent(last.date)}&limit=${PAGE_SIZE}`;
+  document.getElementById('sidebar-title').textContent = 'NO LOCATION';
+  paintSidebar();
+  document.getElementById('sidebar-content').scrollTop = 0;
+  document.getElementById('sidebar').classList.add('open');
+
+  let url = `/api/news?unlocated=1&days=7&limit=${PAGE_SIZE}`;
   if (activeFilter !== 'all') url += `&type=${encodeURIComponent(activeFilter)}`;
 
   try {
     const res = await fetch(url);
+    const items = await res.json();
+    if (token !== sidebarState.token) return;
+    sidebarState.articles = items;
+  } catch (err) {
+    console.error('Failed to load reports with no location:', err);
+  } finally {
+    if (token === sidebarState.token) {
+      sidebarState.loading = false;
+      paintSidebar();
+    }
+  }
+}
+
+async function loadOlder() {
+  if (sidebarState.loading || sidebarState.exhausted) return;
+  const inCity = sidebarState.mode === 'city';
+  if (inCity && !sidebarState.city) return;
+
+  const token = sidebarState.token;
+  const last = sidebarState.articles[sidebarState.articles.length - 1];
+  const beforeDate = last ? last.date : new Date().toISOString();
+
+  const scope = inCity ? `city=${encodeURIComponent(sidebarState.city)}` : 'unlocated=1';
+  let url = `/api/news?${scope}&before=${encodeURIComponent(beforeDate)}&limit=${PAGE_SIZE}`;
+  if (last && last.id) url += `&beforeId=${encodeURIComponent(last.id)}`;
+  if (activeFilter !== 'all') url += `&type=${encodeURIComponent(activeFilter)}`;
+
+  sidebarState.loading = true;
+  paintSidebar();
+
+  try {
+    const res = await fetch(url);
     const older = await res.json();
-    if (sidebarState.city !== city) return;
+    if (token !== sidebarState.token) return;
     sidebarState.articles = sidebarState.articles.concat(older);
     if (older.length < PAGE_SIZE) sidebarState.exhausted = true;
   } catch (err) {
     console.error('Failed to load older reports:', err);
   } finally {
-    if (sidebarState.city === city) {
+    if (token === sidebarState.token) {
       sidebarState.loading = false;
       paintSidebar();
     }
@@ -233,12 +284,18 @@ document.getElementById('sidebar-content').addEventListener('click', (e) => {
 const legend = document.getElementById('legend');
 L.DomEvent.disableClickPropagation(legend);
 
+document.getElementById('unlocated-link').addEventListener('click', openUnlocated);
+
 document.querySelectorAll('.filter').forEach(el => {
   el.addEventListener('click', () => {
     activeFilter = el.dataset.filter;
     document.querySelectorAll('.filter').forEach(f => f.classList.remove('active'));
     el.classList.add('active');
     render();
+    if (sidebarState.mode === 'unlocated' &&
+        document.getElementById('sidebar').classList.contains('open')) {
+      openUnlocated();
+    }
   });
 });
 
@@ -259,7 +316,8 @@ fetch('https://raw.githubusercontent.com/datasets/geo-countries/master/data/coun
       },
       interactive: false
     }).addTo(map);
-  });
+  })
+  .catch(err => console.error('Failed to load borders:', err));
 
 fetch('/api/frontline')
   .then(res => {
@@ -287,6 +345,17 @@ fetch('/api/frontline-info')
   })
   .catch(() => {
     document.getElementById('frontline-date').textContent = 'date unavailable';
+  });
+
+fetch('/api/stats?days=7')
+  .then(res => res.json())
+  .then(stats => {
+    document.getElementById('unlocated-count').textContent = stats.unlocated;
+    document.getElementById('unlocated-total').textContent = stats.total;
+  })
+  .catch(() => {
+    document.getElementById('unlocated-count').textContent = '?';
+    document.getElementById('unlocated-total').textContent = '?';
   });
 
 fetch('/api/news')

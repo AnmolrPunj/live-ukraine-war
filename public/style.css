@@ -223,6 +223,22 @@ body {
     left: 0;
 }
 
+.unlocated-row {
+    margin-top: 5px;
+}
+
+.unlocated-link {
+    font-size: 11px;
+    font-weight: bold;
+    color: #111;
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+.unlocated-link:hover {
+    text-decoration: none;
+}
+
 .legend-note {
     font-size: 9px;
     color: #666;
@@ -291,6 +307,12 @@ body {
 
     .filter {
         padding: 6px 4px 6px 13px;
+    }
+
+    .unlocated-link {
+        font-size: 12px;
+        display: inline-block;
+        padding: 4px 0;
     }
 
     .legend-note {

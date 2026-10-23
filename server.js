@@ -568,8 +568,8 @@ app.get('/api/news', async (req, res) => {
       await refreshing;
     }
 
-    const { city, type, before } = req.query;
-    const where = ['city IS NOT NULL'];
+    const { city, type, before, beforeId, unlocated } = req.query;
+    const where = [unlocated ? 'city IS NULL' : 'city IS NOT NULL'];
     const params = [];
     let limit;
 
@@ -583,22 +583,28 @@ app.get('/api/news', async (req, res) => {
     }
 
     if (before) {
-      where.push('sort_date < ?');
-      params.push(String(before));
+      const lastId = parseInt(beforeId, 10);
+      if (Number.isInteger(lastId)) {
+        where.push('(sort_date < ? OR (sort_date = ? AND id < ?))');
+        params.push(String(before), String(before), lastId);
+      } else {
+        where.push('sort_date < ?');
+        params.push(String(before));
+      }
       limit = Math.min(parseInt(req.query.limit, 10) || 20, 100);
     } else {
       const days = Math.min(parseInt(req.query.days, 10) || 7, 365);
       const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
       where.push('sort_date >= ?');
       params.push(cutoff);
-      limit = 1000;
+      limit = Math.min(parseInt(req.query.limit, 10) || 1000, 1000);
     }
 
     const sql = `
-      SELECT title, link, description, city, lat, lng, type, source, sort_date AS date
+      SELECT id, title, link, description, city, lat, lng, type, source, sort_date AS date
       FROM articles
       WHERE ${where.join(' AND ')}
-      ORDER BY sort_date DESC
+      ORDER BY sort_date DESC, id DESC
       LIMIT ?
     `;
     const rows = db.prepare(sql).all(...params, limit);
@@ -606,6 +612,26 @@ app.get('/api/news', async (req, res) => {
   } catch (err) {
     console.error('News query failed:', err.message);
     res.status(500).json({ error: 'Failed to load news' });
+  }
+});
+
+app.get('/api/stats', (req, res) => {
+  try {
+    const days = Math.min(parseInt(req.query.days, 10) || 7, 365);
+    const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+    const row = db.prepare(`
+      SELECT
+        COUNT(*) AS total,
+        SUM(CASE WHEN city IS NULL THEN 1 ELSE 0 END) AS unlocated
+      FROM articles
+      WHERE sort_date >= ?
+    `).get(cutoff);
+    const total = row.total || 0;
+    const unlocated = row.unlocated || 0;
+    res.json({ days, total, located: total - unlocated, unlocated });
+  } catch (err) {
+    console.error('Stats query failed:', err.message);
+    res.status(500).json({ error: 'Failed to load stats' });
   }
 });
 
