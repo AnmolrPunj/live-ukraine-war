@@ -5,13 +5,13 @@ const path = require('path');
 
 const PORT = 3100;
 const SAMPLE_SIZE = 1000;
-const FRESH_FROM = process.env.FRESH_FROM || '2026-10-23T04:30:00.000Z';
 const TYPES = ['military', 'diplomatic', 'humanitarian'];
 
 const dataDir = path.join(__dirname, 'data');
 const dbFile = path.join(dataDir, 'articles.db');
 const sampleFile = path.join(dataDir, 'label-sample.json');
 const labelsFile = path.join(dataDir, 'labels.json');
+const freezeFile = path.join(__dirname, 'freeze.json');
 
 if (!fs.existsSync(dbFile)) {
   console.error('No database found at ' + dbFile + '. Run the main server first.');
@@ -32,13 +32,28 @@ function writeJSON(file, value) {
   fs.writeFileSync(file, JSON.stringify(value, null, 2));
 }
 
+function freezeAt() {
+  if (process.env.FREEZE_AT) return process.env.FREEZE_AT;
+  const f = readJSON(freezeFile, null);
+  return f && f.at ? f.at : null;
+}
+
+const getSeen = db.prepare('SELECT first_seen_at FROM articles WHERE id = ?');
+
+function isTestSet(label) {
+  const at = freezeAt();
+  if (!at) return false;
+  const row = getSeen.get(label.id);
+  return !!row && row.first_seen_at >= at;
+}
+
 function topUpSample() {
   const sample = readJSON(sampleFile, []);
   if (sample.length >= SAMPLE_SIZE) return sample;
   const have = new Set(sample);
   const pool = db
-    .prepare('SELECT id FROM articles WHERE first_seen_at >= ?')
-    .all(FRESH_FROM)
+    .prepare('SELECT id FROM articles')
+    .all()
     .map(r => r.id)
     .filter(id => !have.has(id));
   if (!pool.length) return sample;
@@ -76,7 +91,8 @@ app.get('/api/next', (req, res) => {
   const progress = {
     done: done.size,
     total: sample.length,
-    fresh: labels.filter(l => l.fresh).length
+    frozen: !!freezeAt(),
+    testSet: labels.filter(isTestSet).length
   };
   if (nextId === undefined) return res.json({ article: null, progress });
   const a = getArticle.get(nextId);
@@ -113,7 +129,6 @@ app.post('/api/label', (req, res) => {
     predicted: a.type,
     label,
     also,
-    fresh: a.first_seen_at >= FRESH_FROM,
     at: new Date().toISOString()
   });
   writeJSON(labelsFile, labels);
@@ -129,8 +144,8 @@ app.post('/api/undo', (req, res) => {
 
 app.get('/api/results', (req, res) => {
   const all = readJSON(labelsFile, []);
-  const scope = req.query.scope === 'fresh' ? 'fresh' : 'all';
-  const labels = scope === 'fresh' ? all.filter(l => l.fresh) : all;
+  const scope = req.query.scope === 'test' ? 'test' : 'all';
+  const labels = scope === 'test' ? all.filter(isTestSet) : all;
 
   const counted = labels.filter(l => TYPES.includes(l.label));
   const n = counted.length;
@@ -179,6 +194,7 @@ app.get('/api/results', (req, res) => {
 
   res.json({
     scope,
+    frozen: !!freezeAt(),
     labelled: labels.length,
     offtopic: labels.filter(l => l.label === 'offtopic').length,
     unsureOld: labels.filter(l => l.label === 'unsure').length,
@@ -306,7 +322,8 @@ function show(view) {
 async function loadNext() {
   const res = await fetch('/api/next');
   const data = await res.json();
-  $('progress').textContent = data.progress.done + ' of ' + data.progress.total + ' labelled (' + data.progress.fresh + ' from the new batch)';
+  $('progress').textContent = data.progress.done + ' of ' + data.progress.total + ' labelled' +
+    (data.progress.frozen ? ' (' + data.progress.testSet + ' in the sealed test set)' : '');
   current = data.article;
   selection = [];
   paintSelection();
@@ -369,7 +386,7 @@ async function loadResults() {
 
   const nav = document.createElement('div');
   nav.className = 'nav';
-  [['all', 'All labels'], ['fresh', 'New batch only']].forEach(([scope, text]) => {
+  [['all', 'All labels'], ['test', 'Sealed test set only']].forEach(([scope, text]) => {
     const a = document.createElement('a');
     a.textContent = scope === resultsScope ? '> ' + text : text;
     a.addEventListener('click', () => { resultsScope = scope; loadResults(); });
@@ -378,7 +395,9 @@ async function loadResults() {
   box.appendChild(nav);
 
   if (!r.counted) {
-    add('p', 'No labels yet in this view.');
+    add('p', resultsScope === 'test' && !r.frozen
+      ? 'No test set is sealed yet. The test set is every article collected after the date in freeze.json, which you create when the model is frozen.'
+      : 'No labels yet in this view.');
     return;
   }
 
