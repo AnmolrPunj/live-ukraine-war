@@ -10,6 +10,9 @@ const map = L.map('map', {
     maxZoom: 12
 }).setView([48.3794, 31.1656], 5.5);
 
+map.createPane('pins');
+map.getPane('pins').style.zIndex = 620;
+
 L.tileLayer('https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png', {
     attribution: '© Stadia Maps © OpenStreetMap contributors',
 }).addTo(map);
@@ -163,15 +166,17 @@ function render() {
     const lng = list[0].lng;
 
     L.circleMarker([lat, lng], {
+      pane: 'pins',
       radius: radius,
       fillColor: '#ffffff',
       color: '#000000',
       weight: 1.5,
-      fillOpacity: 0.9,
+      fillOpacity: 0.95,
       interactive: false
     }).addTo(pinLayer);
 
     L.circleMarker([lat, lng], {
+      pane: 'pins',
       radius: radius + 8,
       fillColor: 'transparent',
       color: 'transparent',

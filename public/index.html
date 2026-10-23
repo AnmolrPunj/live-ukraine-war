@@ -21,18 +21,14 @@
   </div>
 
   <div id="legend">
-    <div class="legend-title">Borders</div>
-    <div class="legend-item" style="color:#B8960C">Ukraine border</div>
-    <div class="legend-item" style="color:#FF4444">Russia border</div>
-    <div class="legend-item" style="color:#CC0000">Russian occupied territory</div>
-    <div class="legend-divider"></div>
-    <div class="legend-title">Show reports</div>
-    <div class="legend-item filter active" data-filter="all" style="color:#111">All</div>
-    <div class="legend-item filter" data-filter="military" style="color:#CC0000">Military / Combat</div>
-    <div class="legend-item filter" data-filter="diplomatic" style="color:#4A90D9">Diplomatic / Political</div>
-    <div class="legend-item filter" data-filter="humanitarian" style="color:#E8A838">Humanitarian</div>
-    <div class="legend-note">Pin size = reports in the last 7 days</div>
-    <div class="legend-note">Types are auto-guessed from keywords and may be wrong</div>
+    <div class="filter-row">
+      <span class="legend-title">Show</span>
+      <span class="legend-item filter active" data-filter="all" style="color:#111">All</span>
+      <span class="legend-item filter" data-filter="military" style="color:#CC0000">Military</span>
+      <span class="legend-item filter" data-filter="diplomatic" style="color:#4A90D9">Diplomatic</span>
+      <span class="legend-item filter" data-filter="humanitarian" style="color:#E8A838">Humanitarian</span>
+    </div>
+    <div class="legend-note">Pin size = reports in the last 7 days. Types are guessed from keywords and may be wrong. Red area = Russian-occupied territory (DeepState data).</div>
   </div>
 
   <div id="map"></div>

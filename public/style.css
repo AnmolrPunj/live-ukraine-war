@@ -167,17 +167,23 @@ body {
 
 #legend {
     position: fixed;
-    bottom: 20px;
+    bottom: 10px;
     left: 10px;
     background: #ffffff;
     color: #111;
-    padding: 8px 10px;
+    padding: 6px 10px;
     z-index: 1000;
     font-family: Arial, sans-serif;
     font-size: 11px;
     border: 1px solid #ccc;
-    min-width: 190px;
-    max-width: 230px;
+    max-width: 370px;
+}
+
+.filter-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px 12px;
 }
 
 .legend-title {
@@ -186,23 +192,16 @@ body {
     text-transform: uppercase;
     letter-spacing: 1px;
     color: #666;
-    margin-bottom: 5px;
 }
 
 .legend-item {
-    margin-bottom: 4px;
     font-size: 11px;
     font-weight: bold;
 }
 
-.legend-divider {
-    border-top: 1px solid #ccc;
-    margin: 7px 0;
-}
-
 .filter {
     cursor: pointer;
-    padding-left: 12px;
+    padding-left: 11px;
     position: relative;
 }
 
@@ -223,7 +222,7 @@ body {
 .legend-note {
     font-size: 9px;
     color: #666;
-    margin-top: 6px;
+    margin-top: 5px;
     font-weight: normal;
     line-height: 1.3;
 }
