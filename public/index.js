@@ -3,12 +3,29 @@ const bounds = L.latLngBounds(
     L.latLng(52.5, 40.5)
 );
 
+const smallScreen = window.matchMedia('(max-width: 700px)');
+const HIT_PAD = window.matchMedia('(pointer: coarse)').matches ? 16 : 8;
+
 const map = L.map('map', {
     maxBounds: bounds,
     maxBoundsViscosity: 1.0,
-    minZoom: 5.5,
-    maxZoom: 12
-}).setView([48.3794, 31.1656], 5.5);
+    minZoom: smallScreen.matches ? 4 : 5.5,
+    maxZoom: 12,
+    zoomSnap: 0.5
+});
+
+function applyLayout() {
+    map.setMinZoom(smallScreen.matches ? 4 : 5.5);
+    map.invalidateSize();
+    if (smallScreen.matches) {
+        map.fitBounds(bounds);
+    } else {
+        map.setView([48.3794, 31.1656], 5.5);
+    }
+}
+
+applyLayout();
+smallScreen.addEventListener('change', applyLayout);
 
 map.createPane('pins');
 map.getPane('pins').style.zIndex = 620;
@@ -177,7 +194,7 @@ function render() {
 
     L.circleMarker([lat, lng], {
       pane: 'pins',
-      radius: radius + 8,
+      radius: radius + HIT_PAD,
       fillColor: 'transparent',
       color: 'transparent',
       weight: 0,
@@ -188,6 +205,13 @@ function render() {
       L.DomEvent.stopPropagation(e);
       currentCity = city;
       openSidebar(city, list);
+
+      if (smallScreen.matches) {
+        const point = map.latLngToContainerPoint([lat, lng]);
+        if (point.y > window.innerHeight * 0.4) {
+          map.panBy([0, point.y - window.innerHeight * 0.2]);
+        }
+      }
     });
   });
 
@@ -238,7 +262,10 @@ fetch('https://raw.githubusercontent.com/datasets/geo-countries/master/data/coun
   });
 
 fetch('/api/frontline')
-  .then(res => res.json())
+  .then(res => {
+    if (!res.ok) throw new Error('Frontline unavailable');
+    return res.json();
+  })
   .then(data => {
     L.geoJSON(data, {
       style: {
@@ -251,6 +278,16 @@ fetch('/api/frontline')
     }).addTo(map);
   })
   .catch(err => console.error('Failed to load frontline:', err));
+
+fetch('/api/frontline-info')
+  .then(res => res.json())
+  .then(info => {
+    document.getElementById('frontline-date').textContent =
+      info.date ? `as of ${info.date}` : 'date unavailable';
+  })
+  .catch(() => {
+    document.getElementById('frontline-date').textContent = 'date unavailable';
+  });
 
 fetch('/api/news')
   .then(res => res.json())
