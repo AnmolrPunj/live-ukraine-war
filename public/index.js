@@ -20,10 +20,19 @@ const MARKER_STYLES = {
   humanitarian: { color: '#E8A838', label: 'Humanitarian' }
 };
 
+const PAGE_SIZE = 20;
+
 const pinLayer = L.layerGroup().addTo(map);
 let allArticles = [];
 let activeFilter = 'all';
 let currentCity = null;
+
+const sidebarState = {
+  city: null,
+  articles: [],
+  exhausted: false,
+  loading: false
+};
 
 function escapeHTML(str) {
   return String(str || '')
@@ -37,7 +46,7 @@ function timeAgo(dateStr) {
   if (!dateStr) return 'Date unknown';
   const then = new Date(dateStr);
   if (isNaN(then)) return 'Date unknown';
-  const diff = Math.floor((Date.now() - then) / 1000);
+  const diff = Math.max(0, Math.floor((Date.now() - then) / 1000));
   if (diff < 60) return `${diff} seconds ago`;
   if (diff < 3600) return `${Math.floor(diff / 60)} minutes ago`;
   if (diff < 86400) return `${Math.floor(diff / 3600)} hours ago`;
@@ -63,36 +72,85 @@ function groupByCity(list) {
   return groups;
 }
 
+function articleHTML(article) {
+  const style = MARKER_STYLES[article.type] || MARKER_STYLES.military;
+  return `
+    <div class="article-card">
+      <div class="article-type" style="color:${style.color}">${style.label}</div>
+      <div class="article-title">${escapeHTML(article.title)}</div>
+      <div class="article-desc">${escapeHTML(article.description)}</div>
+      <div class="article-footer">
+        <span class="article-time">${timeAgo(article.date)}</span>
+        <a href="${escapeHTML(article.link)}" target="_blank" rel="noopener" class="article-link">Source →</a>
+      </div>
+    </div>
+  `;
+}
+
+function paintSidebar() {
+  const n = sidebarState.articles.length;
+  const filterLabel = activeFilter === 'all' ? '' : ` · ${MARKER_STYLES[activeFilter].label}`;
+  const noun = n === 1 ? 'report' : 'reports';
+  const shown = sidebarState.exhausted ? '' : ' shown';
+
+  document.getElementById('sidebar-updated').textContent = `${n} ${noun}${shown}${filterLabel}`;
+
+  let footer;
+  if (sidebarState.exhausted) {
+    footer = '<div class="sidebar-end">No older reports</div>';
+  } else {
+    const label = sidebarState.loading ? 'Loading...' : 'Load older reports';
+    footer = `<button id="load-older" class="load-older">${label}</button>`;
+  }
+
+  document.getElementById('sidebar-content').innerHTML =
+    sidebarState.articles.map(articleHTML).join('') + footer;
+}
+
 function closeSidebar() {
   currentCity = null;
+  sidebarState.city = null;
   document.getElementById('sidebar').classList.remove('open');
 }
 
 function openSidebar(city, articles) {
-  const sorted = [...articles].sort((a, b) => dateValue(b) - dateValue(a));
-  const filterLabel = activeFilter === 'all' ? '' : ` · ${MARKER_STYLES[activeFilter].label}`;
+  sidebarState.city = city;
+  sidebarState.articles = [...articles].sort((a, b) => dateValue(b) - dateValue(a));
+  sidebarState.exhausted = false;
+  sidebarState.loading = false;
 
   document.getElementById('sidebar-title').textContent = city.toUpperCase();
-  document.getElementById('sidebar-updated').textContent =
-    `${sorted.length} ${sorted.length === 1 ? 'report' : 'reports'}${filterLabel}`;
-
-  document.getElementById('sidebar-content').innerHTML = sorted.map(article => {
-    const style = MARKER_STYLES[article.type] || MARKER_STYLES.military;
-    return `
-      <div class="article-card">
-        <div class="article-type" style="color:${style.color}">${style.label}</div>
-        <div class="article-title">${escapeHTML(article.title)}</div>
-        <div class="article-desc">${escapeHTML(article.description)}</div>
-        <div class="article-footer">
-          <span class="article-time">${timeAgo(article.date)}</span>
-          <a href="${escapeHTML(article.link)}" target="_blank" rel="noopener" class="article-link">Source →</a>
-        </div>
-      </div>
-    `;
-  }).join('');
-
+  paintSidebar();
   document.getElementById('sidebar-content').scrollTop = 0;
   document.getElementById('sidebar').classList.add('open');
+}
+
+async function loadOlder() {
+  if (sidebarState.loading || sidebarState.exhausted || !sidebarState.city) return;
+  const city = sidebarState.city;
+  const last = sidebarState.articles[sidebarState.articles.length - 1];
+  if (!last) return;
+
+  sidebarState.loading = true;
+  paintSidebar();
+
+  let url = `/api/news?city=${encodeURIComponent(city)}&before=${encodeURIComponent(last.date)}&limit=${PAGE_SIZE}`;
+  if (activeFilter !== 'all') url += `&type=${encodeURIComponent(activeFilter)}`;
+
+  try {
+    const res = await fetch(url);
+    const older = await res.json();
+    if (sidebarState.city !== city) return;
+    sidebarState.articles = sidebarState.articles.concat(older);
+    if (older.length < PAGE_SIZE) sidebarState.exhausted = true;
+  } catch (err) {
+    console.error('Failed to load older reports:', err);
+  } finally {
+    if (sidebarState.city === city) {
+      sidebarState.loading = false;
+      paintSidebar();
+    }
+  }
 }
 
 function render() {
@@ -138,6 +196,10 @@ function render() {
 }
 
 document.getElementById('sidebar-close').addEventListener('click', closeSidebar);
+
+document.getElementById('sidebar-content').addEventListener('click', (e) => {
+  if (e.target && e.target.id === 'load-older') loadOlder();
+});
 
 const legend = document.getElementById('legend');
 L.DomEvent.disableClickPropagation(legend);

@@ -136,6 +136,35 @@ body {
     text-decoration: underline;
 }
 
+.load-older {
+    display: block;
+    width: 100%;
+    padding: 14px;
+    background: #f2f2f2;
+    border: none;
+    border-top: 1px solid #ccc;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 11px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #111;
+    cursor: pointer;
+}
+
+.load-older:hover {
+    background: #e6e6e6;
+}
+
+.sidebar-end {
+    padding: 14px;
+    font-size: 10px;
+    color: #999;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
 #legend {
     position: fixed;
     bottom: 20px;
@@ -148,6 +177,7 @@ body {
     font-size: 11px;
     border: 1px solid #ccc;
     min-width: 190px;
+    max-width: 230px;
 }
 
 .legend-title {
@@ -195,4 +225,5 @@ body {
     color: #666;
     margin-top: 6px;
     font-weight: normal;
+    line-height: 1.3;
 }

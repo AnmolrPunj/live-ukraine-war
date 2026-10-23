@@ -2,12 +2,56 @@ require('dotenv').config();
 const express = require('express');
 const axios = require('axios');
 const RSSParser = require('rss-parser');
+const Database = require('better-sqlite3');
+const fs = require('fs');
+const path = require('path');
+
 const parser = new RSSParser({ timeout: 10000 });
 
 const app = express();
 const PORT = 3000;
 
 app.use(express.static('public'));
+
+const dataDir = path.join(__dirname, 'data');
+fs.mkdirSync(dataDir, { recursive: true });
+const db = new Database(path.join(dataDir, 'articles.db'));
+
+db.exec(`
+  CREATE TABLE IF NOT EXISTS articles (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    link TEXT NOT NULL UNIQUE,
+    title TEXT NOT NULL,
+    description TEXT,
+    raw_text TEXT,
+    city TEXT NOT NULL,
+    lat REAL NOT NULL,
+    lng REAL NOT NULL,
+    type TEXT NOT NULL,
+    published_at TEXT,
+    first_seen_at TEXT NOT NULL,
+    sort_date TEXT NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS idx_articles_sort ON articles(sort_date);
+  CREATE INDEX IF NOT EXISTS idx_articles_city_sort ON articles(city, sort_date);
+`);
+
+const insertArticle = db.prepare(`
+  INSERT OR IGNORE INTO articles
+    (link, title, description, raw_text, city, lat, lng, type, published_at, first_seen_at, sort_date)
+  VALUES
+    (@link, @title, @description, @raw_text, @city, @lat, @lng, @type, @published_at, @first_seen_at, @sort_date)
+`);
+
+const insertMany = db.transaction((rows) => {
+  let added = 0;
+  for (const row of rows) {
+    added += insertArticle.run(row).changes;
+  }
+  return added;
+});
+
+const countArticles = db.prepare('SELECT COUNT(*) AS n FROM articles');
 
 app.get('/api/test', (req, res) => {
   res.json({ message: 'Server is working!' });
@@ -119,6 +163,8 @@ const ALL_KEYWORDS = [
   ...MILITARY, ...DIPLOMATIC, ...HUMANITARIAN, 'war', 'invasion', 'military'
 ];
 
+const VALID_TYPES = ['military', 'diplomatic', 'humanitarian'];
+
 function classifyArticle(title, description) {
   const titleLower = title.toLowerCase();
   const descLower = description.toLowerCase();
@@ -136,6 +182,14 @@ function classifyArticle(title, description) {
   return 'humanitarian';
 }
 
+function toISO(value) {
+  if (!value) return null;
+  const d = new Date(value);
+  if (isNaN(d)) return null;
+  if (d.getTime() > Date.now() + 60 * 60 * 1000) return null;
+  return d.toISOString();
+}
+
 const FEEDS = [
   'https://feeds.bbci.co.uk/news/world/europe/rss.xml',
   'https://www.theguardian.com/world/ukraine/rss',
@@ -145,10 +199,6 @@ const FEEDS = [
   'https://feeds.skynews.com/feeds/rss/world.xml',
   'https://www.aljazeera.com/xml/rss/all.xml'
 ];
-
-let newsCache = null;
-let newsFetched = null;
-let warming = false;
 
 async function fetchNews() {
   const results = await Promise.all(FEEDS.map(async (feedUrl) => {
@@ -191,42 +241,101 @@ async function fetchNews() {
       title,
       link,
       description: description.slice(0, 120),
+      raw_text: (title + '\n' + description).slice(0, 2000),
       city,
       lat,
       lng,
-      date: item.isoDate || item.pubDate || null,
+      published_at: toISO(item.isoDate || item.pubDate),
       type: classifyArticle(title, description)
     });
   }
 
-  articles.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
-  console.log(`Found ${articles.length} geolocated articles`);
   return articles;
 }
 
-async function warmCache() {
-  if (warming) return;
-  warming = true;
-  try {
-    console.log('Fetching fresh news...');
-    newsCache = await fetchNews();
-    newsFetched = Date.now();
-  } catch (err) {
-    console.error('News fetch failed:', err.message);
-  } finally {
-    warming = false;
-  }
+let refreshing = null;
+
+function refreshArchive() {
+  if (refreshing) return refreshing;
+  refreshing = (async () => {
+    try {
+      console.log('Fetching fresh news...');
+      const found = await fetchNews();
+      const now = new Date().toISOString();
+      const rows = found.map(a => ({
+        link: a.link,
+        title: a.title,
+        description: a.description,
+        raw_text: a.raw_text,
+        city: a.city,
+        lat: a.lat,
+        lng: a.lng,
+        type: a.type,
+        published_at: a.published_at,
+        first_seen_at: now,
+        sort_date: a.published_at || now
+      }));
+      const added = insertMany(rows);
+      const total = countArticles.get().n;
+      console.log(`Archive: ${found.length} matched, ${added} new, ${total} total`);
+    } catch (err) {
+      console.error('Archive refresh failed:', err.message);
+    } finally {
+      refreshing = null;
+    }
+  })();
+  return refreshing;
 }
 
 app.get('/api/news', async (req, res) => {
-  const oneHour = 60 * 60 * 1000;
-  if (!newsCache || Date.now() - newsFetched > oneHour) {
-    await warmCache();
+  try {
+    if (countArticles.get().n === 0 && refreshing) {
+      await refreshing;
+    }
+
+    const { city, type, before } = req.query;
+    const where = [];
+    const params = [];
+    let limit;
+
+    if (city) {
+      where.push('city = ?');
+      params.push(String(city));
+    }
+    if (type && VALID_TYPES.includes(type)) {
+      where.push('type = ?');
+      params.push(type);
+    }
+
+    if (before) {
+      where.push('sort_date < ?');
+      params.push(String(before));
+      limit = Math.min(parseInt(req.query.limit, 10) || 20, 100);
+    } else {
+      const days = Math.min(parseInt(req.query.days, 10) || 7, 365);
+      const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+      where.push('sort_date >= ?');
+      params.push(cutoff);
+      limit = 1000;
+    }
+
+    const sql = `
+      SELECT title, link, description, city, lat, lng, type, sort_date AS date
+      FROM articles
+      WHERE ${where.join(' AND ')}
+      ORDER BY sort_date DESC
+      LIMIT ?
+    `;
+    const rows = db.prepare(sql).all(...params, limit);
+    res.json(rows);
+  } catch (err) {
+    console.error('News query failed:', err.message);
+    res.status(500).json({ error: 'Failed to load news' });
   }
-  res.json(newsCache || []);
 });
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
-  warmCache();
+  refreshArchive();
+  setInterval(refreshArchive, 60 * 60 * 1000);
 });
