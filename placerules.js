@@ -28,7 +28,7 @@ const SUBJECT_VERBS = new Set([
 
 const PUBLICATION_WORDS = new Set(['post', 'independent']);
 
-const METONYM_PRONE = new Set(['Kyiv']);
+const METONYM_PRONE = new Set(['Kyiv', 'Moscow']);
 
 const INDEX_PAGE = [
   /^ukraine war news today/i,

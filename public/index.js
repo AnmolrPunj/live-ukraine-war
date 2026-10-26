@@ -1,6 +1,11 @@
-const bounds = L.latLngBounds(
+const startBounds = L.latLngBounds(
     L.latLng(44.0, 22.0),
     L.latLng(52.5, 40.5)
+);
+
+const bounds = L.latLngBounds(
+    L.latLng(42.0, 22.0),
+    L.latLng(56.5, 50.0)
 );
 
 const smallScreen = window.matchMedia('(max-width: 700px)');
@@ -18,7 +23,7 @@ function applyLayout() {
     map.setMinZoom(smallScreen.matches ? 4 : 5.5);
     map.invalidateSize();
     if (smallScreen.matches) {
-        map.fitBounds(bounds);
+        map.fitBounds(startBounds);
     } else {
         map.setView([48.3794, 31.1656], 5.5);
     }
@@ -319,32 +324,80 @@ fetch('https://raw.githubusercontent.com/datasets/geo-countries/master/data/coun
   })
   .catch(err => console.error('Failed to load borders:', err));
 
-fetch('/api/frontline')
-  .then(res => {
-    if (!res.ok) throw new Error('Frontline unavailable');
-    return res.json();
-  })
-  .then(data => {
-    L.geoJSON(data, {
-      style: {
-        color: '#CC0000',
-        weight: 1,
-        fillOpacity: 0.5,
-        fillColor: '#CC0000'
-      },
-      interactive: false
-    }).addTo(map);
-  })
-  .catch(err => console.error('Failed to load frontline:', err));
+const FRONTLINE_STYLE = {
+  color: '#CC0000',
+  weight: 1,
+  fillOpacity: 0.5,
+  fillColor: '#CC0000'
+};
 
-fetch('/api/frontline-info')
+let frontlineLayer = null;
+let frontlineDates = [];
+let frontlineToken = 0;
+let frontlineTimer = null;
+
+const tlSlider = document.getElementById('tl-slider');
+const tlLabel = document.getElementById('tl-label');
+
+function setFrontlineLabel(text) {
+  document.getElementById('frontline-date').textContent = text;
+}
+
+async function showFrontline(date) {
+  const token = ++frontlineToken;
+  const url = date ? `/api/frontline?date=${encodeURIComponent(date)}` : '/api/frontline';
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Frontline unavailable');
+    const data = await res.json();
+    if (token !== frontlineToken) return;
+    const layer = L.geoJSON(data, { style: FRONTLINE_STYLE, interactive: false }).addTo(map);
+    if (frontlineLayer) map.removeLayer(frontlineLayer);
+    frontlineLayer = layer;
+  } catch (err) {
+    if (token === frontlineToken) {
+      console.error('Failed to load frontline:', err);
+      setFrontlineLabel('snapshot unavailable');
+    }
+  }
+}
+
+function pickSnapshot(index, immediate) {
+  if (!frontlineDates.length) return;
+  const i = Math.max(0, Math.min(frontlineDates.length - 1, index));
+  const date = frontlineDates[i];
+  tlSlider.value = i;
+  tlLabel.textContent = date;
+  setFrontlineLabel(`as of ${date}`);
+  clearTimeout(frontlineTimer);
+  if (immediate) {
+    showFrontline(date);
+  } else {
+    frontlineTimer = setTimeout(() => showFrontline(date), 250);
+  }
+}
+
+tlSlider.addEventListener('input', () => pickSnapshot(parseInt(tlSlider.value, 10), false));
+document.getElementById('tl-prev').addEventListener('click', () => pickSnapshot(parseInt(tlSlider.value, 10) - 1, false));
+document.getElementById('tl-next').addEventListener('click', () => pickSnapshot(parseInt(tlSlider.value, 10) + 1, false));
+document.getElementById('tl-latest').addEventListener('click', () => pickSnapshot(frontlineDates.length - 1, true));
+
+fetch('/api/frontline-dates')
   .then(res => res.json())
-  .then(info => {
-    document.getElementById('frontline-date').textContent =
-      info.date ? `as of ${info.date}` : 'date unavailable';
+  .then(dates => {
+    frontlineDates = Array.isArray(dates) ? dates : [];
+    if (!frontlineDates.length) {
+      setFrontlineLabel('date unavailable');
+      showFrontline(null);
+      return;
+    }
+    tlSlider.max = frontlineDates.length - 1;
+    document.getElementById('timeline-row').hidden = false;
+    pickSnapshot(frontlineDates.length - 1, true);
   })
   .catch(() => {
-    document.getElementById('frontline-date').textContent = 'date unavailable';
+    setFrontlineLabel('date unavailable');
+    showFrontline(null);
   });
 
 fetch('/api/stats?days=7')
