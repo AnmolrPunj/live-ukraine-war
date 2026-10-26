@@ -6,6 +6,7 @@ const Database = require('better-sqlite3');
 const fs = require('fs');
 const path = require('path');
 const rateLimit = require('express-rate-limit');
+const { locatePlace, isIndexPage } = require('placeRules');
 
 const parser = new RSSParser({ timeout: 10000 });
 
@@ -34,7 +35,10 @@ const CANONICAL = {
   'Nikolaev': 'Mykolaiv',
   'Zaporizhzhya': 'Zaporizhzhia',
   'Izyum': 'Izium',
-  'Sievierodonetsk': 'Severodonetsk'
+  'Sievierodonetsk': 'Severodonetsk',
+  'Slovyansk': 'Sloviansk',
+  'Kostyantynivka': 'Kostiantynivka',
+  'Dnipropetrovsk': 'Dnipropetrovsk region'
 };
 
 const CITY_COORDS = {
@@ -86,7 +90,15 @@ const CITY_COORDS = {
   'Svatove': [49.4063, 38.1548],
   'Lozova': [48.8884, 36.3186],
   'Enerhodar': [47.4986, 34.6564],
-  'Huliaipole': [47.6606, 36.2573]
+  'Huliaipole': [47.6606, 36.2573],
+  'Slovyansk': [48.8619, 37.6247],
+  'Druzhkivka': [48.6217, 37.5278],
+  'Kostiantynivka': [48.5278, 37.7069],
+  'Kostyantynivka': [48.5278, 37.7069],
+  'Myrnohrad': [48.3029, 37.2646],
+  'Siversk': [48.8667, 38.1],
+  'Dobropillia': [48.4667, 37.0833],
+  'Dnipropetrovsk': [48.5, 35.0]
 };
 
 const ARTICLE_COLUMNS = `
@@ -156,7 +168,6 @@ const insertMany = db.transaction((rows) => {
 
 const countArticles = db.prepare('SELECT COUNT(*) AS n FROM articles');
 const countPinned = db.prepare('SELECT COUNT(*) AS n FROM articles WHERE city IS NOT NULL');
-const selectUnpinned = db.prepare('SELECT id, title, raw_text FROM articles WHERE city IS NULL');
 const setPlace = db.prepare('UPDATE articles SET city = ?, lat = ?, lng = ? WHERE id = ?');
 
 const FRONTLINE_REPO = 'cyterat/deepstate-map-data';
@@ -250,7 +261,25 @@ async function syncFrontline() {
   }
 }
 
+const DATE_PARAM = /^\d{4}-\d{2}-\d{2}$/;
+
+app.get('/api/frontline-dates', (req, res) => {
+  res.json(localFrontlineFiles().map(frontlineDateFromName));
+});
+
 app.get('/api/frontline', (req, res) => {
+  const date = req.query.date;
+  if (date !== undefined) {
+    if (typeof date !== 'string' || !DATE_PARAM.test(date)) {
+      return res.status(400).json({ error: 'Bad date' });
+    }
+    const name = `deepstatemap_data_${date.replace(/-/g, '')}.geojson`;
+    if (!localFrontlineFiles().includes(name)) {
+      return res.status(404).json({ error: 'No snapshot for that date' });
+    }
+    res.set('Cache-Control', 'public, max-age=3600');
+    return res.sendFile(path.join(frontlineDir, name));
+  }
   const latest = loadLatestFrontline();
   if (!latest) {
     return res.status(503).json({ error: 'Frontline data is not available yet' });
@@ -349,21 +378,8 @@ function loadPlaces() {
   console.log(`GeoNames: ${places} places loaded, ${placeIndex.size} searchable names`);
 }
 
-function tokenize(text) {
-  return (text.match(/[A-Za-z][A-Za-z'’]*/g) || []).map(t => t.replace(/['’]s$/i, ''));
-}
-
-function findPlace(text) {
-  const tokens = tokenize(text);
-  for (let i = 0; i < tokens.length; i++) {
-    for (let n = Math.min(3, tokens.length - i); n >= 1; n--) {
-      const slice = tokens.slice(i, i + n);
-      if (!slice.every(t => /^[A-Z]/.test(t))) continue;
-      const place = placeIndex.get(normalizeName(slice.join(' ')));
-      if (place) return place;
-    }
-  }
-  return null;
+function lookupPlace(slice) {
+  return placeIndex.get(normalizeName(slice.join(' '))) || null;
 }
 
 const MILITARY = [
@@ -407,14 +423,25 @@ const HUMANITARIAN_RX = makeMatchers(HUMANITARIAN);
 const ALL_RX = makeMatchers([...MILITARY, ...DIPLOMATIC, ...HUMANITARIAN, 'war', 'invasion', 'military']);
 const UKRAINE_RX = /\b(ukrain|russia|kyiv|kiev|kremlin|zelensk|putin|donbas|crimea|moscow)/i;
 
-function classifyArticle(title, description) {
+function scoreArticle(title, description) {
   const score = (matchers) =>
     matchers.filter(rx => rx.test(title)).length * 3 +
     matchers.filter(rx => rx.test(description)).length;
 
-  const mil = score(MILITARY_RX);
-  const dip = score(DIPLOMATIC_RX);
-  const hum = score(HUMANITARIAN_RX);
+  return {
+    mil: score(MILITARY_RX),
+    dip: score(DIPLOMATIC_RX),
+    hum: score(HUMANITARIAN_RX)
+  };
+}
+
+function placeFor(title, description, type) {
+  const { mil, hum } = scoreArticle(title, description);
+  return locatePlace(title, description, { type, eventSignal: mil > 0 || hum > 0 }, lookupPlace);
+}
+
+function classifyArticle(title, description) {
+  const { mil, dip, hum } = scoreArticle(title, description);
 
   if (mil === 0 && dip === 0 && hum === 0) return 'military';
   if (mil > dip && mil > hum) return 'military';
@@ -466,6 +493,7 @@ async function fetchNews() {
     const description = (item.contentSnippet || item.content || '').trim();
     const link = (item.link || '').trim();
     if (!title || !/^https?:\/\//i.test(link)) continue;
+    if (isIndexPage(title)) continue;
 
     const titleKey = title.toLowerCase();
     if (seenTitles.has(titleKey) || seenLinks.has(link)) continue;
@@ -473,7 +501,8 @@ async function fetchNews() {
     const combined = title + ' ' + description;
     if (!ALL_RX.some(rx => rx.test(combined))) continue;
 
-    const place = findPlace(title) || findPlace(description);
+    const type = classifyArticle(title, description);
+    const place = placeFor(title, description, type);
     const hasUkraineTerm = UKRAINE_RX.test(combined);
     if (place) {
       if (!place.curated && !hasUkraineTerm) continue;
@@ -494,24 +523,35 @@ async function fetchNews() {
       lat: place ? place.lat : null,
       lng: place ? place.lng : null,
       published_at: toISO(item.isoDate || item.pubDate),
-      type: classifyArticle(title, description)
+      type
     });
   }
 
   return articles;
 }
 
-const rematchUnpinned = db.transaction(() => {
-  let updated = 0;
-  for (const row of selectUnpinned.all()) {
+const selectAllArticles = db.prepare('SELECT id, title, raw_text, type, city FROM articles');
+const clearPlace = db.prepare('UPDATE articles SET city = NULL, lat = NULL, lng = NULL WHERE id = ?');
+
+const repinAll = db.transaction(() => {
+  let pinned = 0;
+  let cleared = 0;
+  let moved = 0;
+  for (const row of selectAllArticles.all()) {
     const description = (row.raw_text || '').split('\n').slice(1).join('\n');
-    const place = findPlace(row.title) || findPlace(description);
+    const place = placeFor(row.title, description, row.type);
+    const next = place ? place.name : null;
+    if (next === row.city) continue;
     if (place) {
       setPlace.run(place.name, place.lat, place.lng, row.id);
-      updated++;
+      if (row.city) moved++;
+      else pinned++;
+    } else {
+      clearPlace.run(row.id);
+      cleared++;
     }
   }
-  return updated;
+  return { pinned, cleared, moved };
 });
 
 let refreshing = null;
@@ -538,12 +578,12 @@ function refreshArchive() {
         sort_date: a.published_at || now
       }));
       const added = insertMany(rows);
-      const rematched = rematchUnpinned();
+      const repin = repinAll();
       const total = countArticles.get().n;
       const pinned = countPinned.get().n;
       console.log(`Archive: ${found.length} candidates, ${added} new, ${total} total, ${pinned} pinned`);
-      if (rematched) {
-        console.log(`Rematched ${rematched} previously unpinned articles`);
+      if (repin.pinned || repin.cleared || repin.moved) {
+        console.log(`Places re-checked: ${repin.pinned} newly pinned, ${repin.moved} moved, ${repin.cleared} unpinned`);
       }
 
       const tally = {};
