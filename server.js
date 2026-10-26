@@ -14,6 +14,11 @@ const parser = new RSSParser({ timeout: 10000 });
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+app.disable('x-powered-by');
+if (process.env.TRUST_PROXY) {
+  app.set('trust proxy', Number(process.env.TRUST_PROXY) || 1);
+}
+
 app.use('/api', rateLimit({
   windowMs: 60 * 1000,
   limit: 120,
@@ -23,9 +28,9 @@ app.use('/api', rateLimit({
   message: { error: 'Too many requests, slow down' }
 }));
 
-app.use(express.static('public'));
+app.use(express.static(path.join(__dirname, 'public')));
 
-const dataDir = path.join(__dirname, 'data');
+const dataDir = process.env.DATA_DIR ? path.resolve(process.env.DATA_DIR) : path.join(__dirname, 'data');
 const frontlineDir = path.join(dataDir, 'frontline');
 const frontlineLiteDir = path.join(dataDir, 'frontline-lite');
 const geonamesFile = path.join(dataDir, 'geonames', 'UA.txt');
