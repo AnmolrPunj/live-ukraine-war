@@ -32,7 +32,13 @@ const METONYM_PRONE = new Set(['Kyiv', 'Moscow']);
 
 const INDEX_PAGE = [
   /^ukraine war news today/i,
-  /top stories and breaking updates/i
+  /top stories and breaking updates/i,
+  /[–—-]\s*cartoon\s*$/i,
+  /[–—-]\s*podcast\s*$/i,
+  /\bweightlifting\b/i,
+  /\bworld championships?\b/i,
+  /\bolympic/i,
+  /\beurovision\b/i
 ];
 
 function isIndexPage(title) {
@@ -109,12 +115,12 @@ function locatePlace(title, description, info, lookup) {
   if (isIndexPage(title) || !info.eventSignal) return null;
 
   const inTitle = distinct(mentions(title, lookup).filter(titleMentionOk));
-  if (inTitle.length === 1) return inTitle[0];
-  if (inTitle.length > 1) return null;
+  if (inTitle.length) return inTitle[0];
 
   if (info.type === 'diplomatic') return null;
 
-  const all = mentions(description, lookup);
+  const lead = description.split(/(?<=[a-z0-9][.!?])\s+(?=[A-Z])/)[0];
+  const all = mentions(lead, lookup);
   if (distinct(all).length !== 1) return null;
   return all.some(snippetMentionOk) ? all[0].place : null;
 }

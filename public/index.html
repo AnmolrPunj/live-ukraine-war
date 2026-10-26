@@ -4,8 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Ukraine War Map</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">  <link rel="stylesheet" href="style.css">
   <link rel="icon" href="/images/favicon.ico">
   <link rel="apple-touch-icon" href="/images/apple-touch-icon.png">
   <link rel="manifest" href="/images/site.webmanifest">
@@ -20,16 +19,47 @@
     <div id="sidebar-content"></div>
   </div>
 
+  <div id="news-page" hidden>
+    <div id="news-head">
+      <div id="news-nav">
+        <span class="legend-title">View</span>
+        <span class="legend-item tab" id="news-tab-map" style="color:#111">Map</span>
+        <span class="legend-item tab active" style="color:#111">More news</span>
+      </div>
+      <div id="news-title">More news</div>
+      <div id="news-note">Stories that don't name a place, so they can't be pinned.</div>
+      <div id="news-controls">
+        <label>Show
+          <select id="news-range">
+            <option value="1">Today</option>
+            <option value="2">Last 2 days</option>
+            <option value="3">Last 3 days</option>
+            <option value="7">Last 7 days</option>
+          </select>
+        </label>
+        <span class="legend-title">Type</span>
+        <span class="legend-item nfilter active" data-news-filter="all" style="color:#111">All</span>
+        <span class="legend-item nfilter" data-news-filter="military" style="color:#CC0000">Military</span>
+        <span class="legend-item nfilter" data-news-filter="diplomatic" style="color:#4A90D9">Diplomatic</span>
+        <span class="legend-item nfilter" data-news-filter="humanitarian" style="color:#E8A838">Humanitarian</span>
+        <input id="news-search" type="search" placeholder="Search">
+      </div>
+    </div>
+    <div id="news-body"></div>
+  </div>
+
   <div id="legend">
     <div class="filter-row">
+      <span class="legend-title">View</span>
+      <span class="legend-item tab active" id="tab-map" style="color:#111">Map</span>
+      <span class="legend-item tab" id="tab-news" style="color:#111">More news</span>
+    </div>
+    <div class="filter-row nav-gap">
       <span class="legend-title">Show</span>
       <span class="legend-item filter active" data-filter="all" style="color:#111">All</span>
       <span class="legend-item filter" data-filter="military" style="color:#CC0000">Military</span>
       <span class="legend-item filter" data-filter="diplomatic" style="color:#4A90D9">Diplomatic</span>
       <span class="legend-item filter" data-filter="humanitarian" style="color:#E8A838">Humanitarian</span>
-    </div>
-    <div class="unlocated-row">
-      <span id="unlocated-link" class="unlocated-link">No location: <span id="unlocated-count">…</span> of <span id="unlocated-total">…</span> reports this week</span>
     </div>
     <div class="timeline-row" id="timeline-row" hidden>
       <span class="legend-title">Front line</span>
@@ -37,12 +67,11 @@
       <input id="tl-date" type="date">
       <label><input id="tl-anim" type="checkbox" checked> Animate</label>
     </div>
-    <div class="legend-note">Pin size = reports in the last 7 days. Types are guessed from keywords and may be wrong. Red area = Russian-occupied territory (<a href="https://deepstatemap.live" target="_blank" rel="noopener">DeepState</a> data, <span id="frontline-date">loading</span>).</div>
+    <div class="legend-note">Pin size = reports in the last 7 days. Types are guessed from keywords and may be wrong. Red area = Russian-occupied territory (<a href="https://deepstatemap.live" target="_blank" rel="noopener">DeepState</a> data, <span id="frontline-date">loading</span>). Wrong pin or category? <a href="contact.html" target="_blank" rel="noopener">Tell us</a>.</div>
   </div>
 
   <div id="map"></div>
 
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="index.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>  <script src="index.js"></script>
 </body>
 </html>

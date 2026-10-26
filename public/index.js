@@ -35,14 +35,15 @@ smallScreen.addEventListener('change', applyLayout);
 map.createPane('pins');
 map.getPane('pins').style.zIndex = 620;
 
-L.tileLayer('https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png', {
-    attribution: '© Stadia Maps © OpenStreetMap contributors',
+L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors'
 }).addTo(map);
 
 const MARKER_STYLES = {
-  military: { color: '#CC0000', label: 'Military / Combat' },
-  diplomatic: { color: '#4A90D9', label: 'Diplomatic / Political' },
-  humanitarian: { color: '#E8A838', label: 'Humanitarian' }
+  military: { color: '#CC0000', label: 'Military / Combat', short: 'Military' },
+  diplomatic: { color: '#4A90D9', label: 'Diplomatic / Political', short: 'Diplomatic' },
+  humanitarian: { color: '#E8A838', label: 'Humanitarian', short: 'Humanitarian' }
 };
 
 const PAGE_SIZE = 20;
@@ -74,10 +75,11 @@ function timeAgo(dateStr) {
   const then = new Date(dateStr);
   if (isNaN(then)) return 'Date unknown';
   const diff = Math.max(0, Math.floor((Date.now() - then) / 1000));
-  if (diff < 60) return `${diff} seconds ago`;
-  if (diff < 3600) return `${Math.floor(diff / 60)} minutes ago`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)} hours ago`;
-  return `${Math.floor(diff / 86400)} days ago`;
+  const unit = (n, word) => `${n} ${word}${n === 1 ? '' : 's'} ago`;
+  if (diff < 60) return unit(diff, 'second');
+  if (diff < 3600) return unit(Math.floor(diff / 60), 'minute');
+  if (diff < 86400) return unit(Math.floor(diff / 3600), 'hour');
+  return unit(Math.floor(diff / 86400), 'day');
 }
 
 function dateValue(article) {
@@ -105,30 +107,47 @@ function sortNewestFirst(a, b) {
   return (b.id || 0) - (a.id || 0);
 }
 
+function reportHref(article) {
+  const query = new URLSearchParams({ title: article.title || '', link: article.link || '' });
+  return escapeHTML('contact.html?' + query.toString());
+}
+
 function articleHTML(article) {
   const style = MARKER_STYLES[article.type] || MARKER_STYLES.military;
+  const meta = [`<span style="color:${style.color}">${style.short}</span>`];
+  if (article.source) meta.push(escapeHTML(article.source));
+  meta.push(timeAgo(article.date));
   return `
     <div class="article-card">
-      <div class="article-type" style="color:${style.color}">${style.label}</div>
       <div class="article-title">${escapeHTML(article.title)}</div>
       <div class="article-desc">${escapeHTML(article.description)}</div>
       <div class="article-footer">
-        <span class="article-time">${timeAgo(article.date)}${article.source ? ' · ' + escapeHTML(article.source) : ''}</span>
-        <a href="${escapeHTML(article.link)}" target="_blank" rel="noopener" class="article-link">Source →</a>
+        <span class="article-time">${meta.join(' · ')}</span>
+        <span class="article-links">
+          <a href="${reportHref(article)}" target="_blank" rel="noopener" class="article-link">Report</a>
+          <a href="${escapeHTML(article.link)}" target="_blank" rel="noopener" class="article-link">Source</a>
+        </span>
       </div>
     </div>
   `;
 }
 
+const tabMap = document.getElementById('tab-map');
+const tabNews = document.getElementById('tab-news');
+
+function setTab(name) {
+  if (tabMap) tabMap.classList.toggle('active', name === 'map');
+  if (tabNews) tabNews.classList.toggle('active', name === 'news');
+}
+
 function paintSidebar() {
   const n = sidebarState.articles.length;
   const filterLabel = activeFilter === 'all' ? '' : ` · ${MARKER_STYLES[activeFilter].label}`;
-  const scopeLabel = sidebarState.mode === 'unlocated' ? ' · no place named' : '';
   const noun = n === 1 ? 'report' : 'reports';
   const shown = sidebarState.exhausted ? '' : ' shown';
 
   document.getElementById('sidebar-updated').textContent =
-    `${n} ${noun}${shown}${filterLabel}${scopeLabel}`;
+    `${n} ${noun}${shown}${filterLabel}`;
 
   let footer;
   if (sidebarState.exhausted) {
@@ -143,6 +162,7 @@ function paintSidebar() {
 }
 
 function closeSidebar() {
+  setTab('map');
   currentCity = null;
   sidebarState.mode = 'city';
   sidebarState.city = null;
@@ -151,6 +171,7 @@ function closeSidebar() {
 }
 
 function openSidebar(city, articles) {
+  setTab('map');
   sidebarState.mode = 'city';
   sidebarState.city = city;
   sidebarState.articles = [...articles].sort(sortNewestFirst);
@@ -164,48 +185,15 @@ function openSidebar(city, articles) {
   document.getElementById('sidebar').classList.add('open');
 }
 
-async function openUnlocated() {
-  currentCity = null;
-  sidebarState.mode = 'unlocated';
-  sidebarState.city = null;
-  sidebarState.articles = [];
-  sidebarState.exhausted = false;
-  sidebarState.loading = true;
-  const token = ++sidebarState.token;
-
-  document.getElementById('sidebar-title').textContent = 'NO LOCATION';
-  paintSidebar();
-  document.getElementById('sidebar-content').scrollTop = 0;
-  document.getElementById('sidebar').classList.add('open');
-
-  let url = `/api/news?unlocated=1&days=7&limit=${PAGE_SIZE}`;
-  if (activeFilter !== 'all') url += `&type=${encodeURIComponent(activeFilter)}`;
-
-  try {
-    const res = await fetch(url);
-    const items = await res.json();
-    if (token !== sidebarState.token) return;
-    sidebarState.articles = items;
-  } catch (err) {
-    console.error('Failed to load reports with no location:', err);
-  } finally {
-    if (token === sidebarState.token) {
-      sidebarState.loading = false;
-      paintSidebar();
-    }
-  }
-}
-
 async function loadOlder() {
   if (sidebarState.loading || sidebarState.exhausted) return;
-  const inCity = sidebarState.mode === 'city';
-  if (inCity && !sidebarState.city) return;
+  if (!sidebarState.city) return;
 
   const token = sidebarState.token;
   const last = sidebarState.articles[sidebarState.articles.length - 1];
   const beforeDate = last ? last.date : new Date().toISOString();
 
-  const scope = inCity ? `city=${encodeURIComponent(sidebarState.city)}` : 'unlocated=1';
+  const scope = `city=${encodeURIComponent(sidebarState.city)}`;
   let url = `/api/news?${scope}&before=${encodeURIComponent(beforeDate)}&limit=${PAGE_SIZE}`;
   if (last && last.id) url += `&beforeId=${encodeURIComponent(last.id)}`;
   if (activeFilter !== 'all') url += `&type=${encodeURIComponent(activeFilter)}`;
@@ -289,7 +277,106 @@ document.getElementById('sidebar-content').addEventListener('click', (e) => {
 const legend = document.getElementById('legend');
 L.DomEvent.disableClickPropagation(legend);
 
-document.getElementById('unlocated-link').addEventListener('click', openUnlocated);
+const newsPage = document.getElementById('news-page');
+const newsBody = document.getElementById('news-body');
+const newsRange = document.getElementById('news-range');
+const newsSearch = document.getElementById('news-search');
+const newsState = { articles: [], filter: 'all', loaded: false };
+
+function startOfLocalDay(daysBack) {
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth(), now.getDate() - daysBack).getTime();
+}
+
+function dayKey(ms) {
+  const d = new Date(ms);
+  return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+}
+
+function dayHeading(ms) {
+  if (dayKey(ms) === dayKey(startOfLocalDay(0))) return 'Today';
+  if (dayKey(ms) === dayKey(startOfLocalDay(1))) return 'Yesterday';
+  return new Date(ms).toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
+}
+
+function paintNews() {
+  const days = parseInt(newsRange.value, 10);
+  const cutoff = startOfLocalDay(days - 1);
+  const query = newsSearch.value.trim().toLowerCase();
+
+  const list = newsState.articles
+    .filter(a => dateValue(a) >= cutoff)
+    .filter(a => newsState.filter === 'all' || a.type === newsState.filter)
+    .filter(a => !query || (a.title + ' ' + (a.description || '')).toLowerCase().includes(query))
+    .sort(sortNewestFirst);
+
+  if (!newsState.loaded) {
+    newsBody.innerHTML = '<div class="news-empty">Loading...</div>';
+    return;
+  }
+  if (!list.length) {
+    newsBody.innerHTML = '<div class="news-empty">No stories in this range.</div>';
+    return;
+  }
+
+  const groups = [];
+  list.forEach(article => {
+    const key = dayKey(dateValue(article));
+    let group = groups[groups.length - 1];
+    if (!group || group.key !== key) {
+      group = { key, ms: dateValue(article), items: [] };
+      groups.push(group);
+    }
+    group.items.push(article);
+  });
+
+  newsBody.innerHTML = groups.map(g =>
+    `<div class="news-day">${escapeHTML(dayHeading(g.ms))}</div>` +
+    `<div class="news-list">${g.items.map(articleHTML).join('')}</div>`
+  ).join('');
+}
+
+async function openNews() {
+  closeSidebar();
+  setTab('news');
+  document.body.classList.add('news-open');
+  newsPage.hidden = false;
+  newsPage.scrollTop = 0;
+  newsState.loaded = false;
+  paintNews();
+  try {
+    const res = await fetch('/api/news?unlocated=1&days=7&limit=1000');
+    newsState.articles = await res.json();
+  } catch (err) {
+    console.error('Failed to load news:', err);
+    newsState.articles = [];
+  }
+  newsState.loaded = true;
+  paintNews();
+}
+
+function closeNews() {
+  newsPage.hidden = true;
+  document.body.classList.remove('news-open');
+  setTab('map');
+}
+
+if (tabNews) tabNews.addEventListener('click', openNews);
+if (tabMap) tabMap.addEventListener('click', closeSidebar);
+document.getElementById('news-tab-map').addEventListener('click', closeNews);
+newsRange.addEventListener('change', paintNews);
+newsSearch.addEventListener('input', paintNews);
+document.querySelectorAll('.nfilter').forEach(el => {
+  el.addEventListener('click', () => {
+    newsState.filter = el.dataset.newsFilter;
+    document.querySelectorAll('.nfilter').forEach(f => f.classList.remove('active'));
+    el.classList.add('active');
+    paintNews();
+  });
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && !newsPage.hidden) closeNews();
+});
 
 document.querySelectorAll('.filter').forEach(el => {
   el.addEventListener('click', () => {
@@ -297,10 +384,6 @@ document.querySelectorAll('.filter').forEach(el => {
     document.querySelectorAll('.filter').forEach(f => f.classList.remove('active'));
     el.classList.add('active');
     render();
-    if (sidebarState.mode === 'unlocated' &&
-        document.getElementById('sidebar').classList.contains('open')) {
-      openUnlocated();
-    }
   });
 });
 
@@ -315,7 +398,7 @@ fetch('https://raw.githubusercontent.com/datasets/geo-countries/master/data/coun
       style: (feature) => {
         const name = feature.properties.ADMIN || feature.properties.name;
         if (name === 'Ukraine') {
-          return { color: '#FFD700', weight: 2, fillOpacity: 0, fillColor: 'transparent' };
+          return { color: '#0057B7', weight: 2, fillOpacity: 0, fillColor: 'transparent' };
         }
         return { color: '#FF4444', weight: 2, fillOpacity: 0, fillColor: 'transparent' };
       },
@@ -601,17 +684,6 @@ fetch('/api/frontline-dates')
   .catch(() => {
     setFrontlineLabel('date unavailable');
     loadLatestFrontline();
-  });
-
-fetch('/api/stats?days=7')
-  .then(res => res.json())
-  .then(stats => {
-    document.getElementById('unlocated-count').textContent = stats.unlocated;
-    document.getElementById('unlocated-total').textContent = stats.total;
-  })
-  .catch(() => {
-    document.getElementById('unlocated-count').textContent = '?';
-    document.getElementById('unlocated-total').textContent = '?';
   });
 
 fetch('/api/news')

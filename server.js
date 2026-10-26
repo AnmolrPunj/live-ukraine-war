@@ -715,7 +715,16 @@ app.get('/api/news', async (req, res) => {
     }
 
     const { city, type, before, beforeId, unlocated } = req.query;
-    const where = [unlocated ? 'city IS NULL' : 'city IS NOT NULL'];
+    const where = [
+      unlocated ? 'city IS NULL' : 'city IS NOT NULL',
+      "title NOT LIKE '%cartoon'",
+      "title NOT LIKE '%podcast'",
+      "title NOT LIKE 'Ukraine War News Today%'",
+      "title NOT LIKE '%weightlifting%'",
+      "title NOT LIKE '%world championship%'",
+      "title NOT LIKE '%olympic%'",
+      "title NOT LIKE '%eurovision%'"
+    ];
     const params = [];
     let limit;
 

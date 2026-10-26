@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contact</title>
+  <link rel="icon" href="/images/favicon.ico">
+  <style>
+    body { margin: 0; padding: 24px 16px; background: #fff; color: #111; font-family: Arial, Helvetica, sans-serif; }
+    main { max-width: 520px; margin: 0 auto; }
+    h1 { font-family: Georgia, 'Times New Roman', serif; font-size: 34px; margin: 0 0 8px; }
+    p { font-size: 14px; line-height: 1.4; }
+    form p { margin: 14px 0 0; }
+    label { display: block; font-size: 13px; margin-bottom: 4px; }
+    select, input[type="text"], input[type="email"], textarea { width: 100%; box-sizing: border-box; font: inherit; font-size: 14px; }
+    textarea { min-height: 110px; }
+    #story { font-family: Georgia, 'Times New Roman', serif; font-size: 15px; border-left: 3px solid #ccc; padding-left: 10px; margin: 14px 0 0; }
+    #error { color: #cc0000; }
+    .hp { display: none; }
+  </style>
+</head>
+<body>
+  <main>
+    <p><a href="/">&larr; Back to the map</a></p>
+    <h1 id="title">Contact</h1>
+    <p id="intro">Wrong pin, wrong category, a bug, or an idea? Tell us. It helps more than you'd think.</p>
+    <p id="story" hidden></p>
+    <form id="contact-form">
+      <input type="hidden" name="access_key" id="access-key">
+      <input type="hidden" name="subject" id="subject">
+      <input type="hidden" name="from_name" value="Ukraine War Map">
+      <input type="hidden" name="story_title" id="story-title">
+      <input type="hidden" name="story_link" id="story-link">
+      <input type="checkbox" name="botcheck" class="hp" tabindex="-1" autocomplete="off">
+      <p>
+        <label for="type">What is this about?</label>
+        <select name="type" id="type">
+          <option value="Wrong pin">Wrong pin or location</option>
+          <option value="Wrong category">Wrong category</option>
+          <option value="Not news">Shouldn't be here</option>
+          <option value="Bug">Bug</option>
+          <option value="Suggestion">Suggestion</option>
+          <option value="Other">Other</option>
+        </select>
+      </p>
+      <p>
+        <label for="name">Name (optional)</label>
+        <input type="text" name="name" id="name" maxlength="100">
+      </p>
+      <p>
+        <label for="email">Email (optional, only if you want a reply)</label>
+        <input type="email" name="email" id="email" maxlength="200">
+      </p>
+      <p>
+        <label for="message">Message</label>
+        <textarea name="message" id="message" maxlength="2000" required></textarea>
+      </p>
+      <p><button type="submit" id="send">Send</button></p>
+      <p id="error" hidden>Something went wrong. Please try again in a minute.</p>
+    </form>
+  </main>
+  <script>
+    const ACCESS_KEY = 'c6723e3d-44a1-4f39-9353-c547a7255540';
+
+    const params = new URLSearchParams(location.search);
+    const storyTitle = (params.get('title') || '').slice(0, 300);
+    const storyLink = (params.get('link') || '').slice(0, 500);
+    const wanted = params.get('type');
+    const form = document.getElementById('contact-form');
+
+    document.getElementById('access-key').value = ACCESS_KEY;
+    document.getElementById('story-title').value = storyTitle;
+    document.getElementById('story-link').value = /^https?:\/\//i.test(storyLink) ? storyLink : '';
+
+    if (wanted) {
+      const option = [...form.type.options].find(o => o.value === wanted);
+      if (option) form.type.value = wanted;
+    }
+
+    if (storyTitle) {
+      const story = document.getElementById('story');
+      story.textContent = 'About this story: ' + storyTitle;
+      story.hidden = false;
+      if (!wanted) form.type.value = 'Wrong pin';
+    }
+
+    form.addEventListener('submit', async function (e) {
+      e.preventDefault();
+      const button = document.getElementById('send');
+      const error = document.getElementById('error');
+      error.hidden = true;
+      button.disabled = true;
+      button.textContent = 'Sending...';
+
+      document.getElementById('subject').value = 'Ukraine War Map: ' + form.type.value;
+
+      try {
+        const response = await fetch('https://api.web3forms.com/submit', {
+          method: 'POST',
+          headers: { Accept: 'application/json' },
+          body: new FormData(form)
+        });
+        const result = await response.json();
+        if (!response.ok || !result.success) throw new Error(result.message || 'failed');
+
+        form.hidden = true;
+        document.getElementById('intro').hidden = true;
+        document.getElementById('story').hidden = true;
+        document.getElementById('title').textContent = 'Thanks, message sent';
+      } catch (err) {
+        error.textContent = 'Could not send (' + (err && err.message ? err.message : 'unknown error') + '). Please try again in a minute.';
+        error.hidden = false;
+        button.disabled = false;
+        button.textContent = 'Send';
+      }
+    });
+  </script>
+</body>
+</html>
