@@ -239,6 +239,23 @@ body {
     text-decoration: none;
 }
 
+.timeline-row {
+    margin-top: 6px;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px 8px;
+}
+
+.timeline-row[hidden] {
+    display: none;
+}
+
+#tl-slider {
+    flex: 1 1 110px;
+    min-width: 100px;
+}
+
 .legend-note {
     font-size: 9px;
     color: #666;
@@ -317,6 +334,10 @@ body {
 
     .legend-note {
         font-size: 9px;
+    }
+
+    #tl-slider {
+        height: 28px;
     }
 }
 

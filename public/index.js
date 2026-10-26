@@ -4,8 +4,8 @@ const startBounds = L.latLngBounds(
 );
 
 const bounds = L.latLngBounds(
-    L.latLng(42.0, 22.0),
-    L.latLng(56.5, 50.0)
+    L.latLng(41.8, 12.4),
+    L.latLng(55.0, 50.0)
 );
 
 const smallScreen = window.matchMedia('(max-width: 700px)');
@@ -331,56 +331,243 @@ const FRONTLINE_STYLE = {
   fillColor: '#CC0000'
 };
 
+const frontlinePane = map.createPane('frontline');
+frontlinePane.style.zIndex = 410;
+frontlinePane.style.pointerEvents = 'none';
+
+const FRAME_MS = 70;
+const MAX_FRAMES_PER_MOVE = 30;
+const PREFETCH_AHEAD = 4;
+const CACHE_LIMITS = { lite: 150, full: 10 };
+
 let frontlineLayer = null;
+const frontlineCache = { lite: new Map(), full: new Map() };
+const frontlineInflight = new Map();
 let frontlineDates = [];
-let frontlineToken = 0;
-let frontlineTimer = null;
+let playhead = -1;
+let target = -1;
+let moveStride = 1;
+let running = false;
+let settleTimer = null;
+let settleToken = 0;
+let shownQuality = null;
+let animate = true;
+let jumpTimer = null;
+let dateTimer = null;
+let runId = 0;
+
+try {
+  animate = localStorage.getItem('frontlineAnimate') !== 'off';
+} catch (err) {}
 
 const tlSlider = document.getElementById('tl-slider');
-const tlLabel = document.getElementById('tl-label');
+const tlDate = document.getElementById('tl-date');
+const tlAnim = document.getElementById('tl-anim');
+const tlRow = document.getElementById('timeline-row');
 
 function setFrontlineLabel(text) {
   document.getElementById('frontline-date').textContent = text;
 }
 
-async function showFrontline(date) {
-  const token = ++frontlineToken;
-  const url = date ? `/api/frontline?date=${encodeURIComponent(date)}` : '/api/frontline';
-  try {
-    const res = await fetch(url);
-    if (!res.ok) throw new Error('Frontline unavailable');
-    const data = await res.json();
-    if (token !== frontlineToken) return;
-    const layer = L.geoJSON(data, { style: FRONTLINE_STYLE, interactive: false }).addTo(map);
-    if (frontlineLayer) map.removeLayer(frontlineLayer);
-    frontlineLayer = layer;
-  } catch (err) {
-    if (token === frontlineToken) {
+function getSnapshot(date, quality) {
+  const cache = frontlineCache[quality];
+  if (cache.has(date)) return Promise.resolve(cache.get(date));
+  const key = date + '|' + quality;
+  if (frontlineInflight.has(key)) return frontlineInflight.get(key);
+  const url = `/api/frontline?date=${encodeURIComponent(date)}` + (quality === 'lite' ? '&quality=lite' : '');
+  const request = fetch(url)
+    .then(res => {
+      if (!res.ok) throw new Error('Frontline unavailable');
+      return res.json();
+    })
+    .then(data => {
+      cache.set(date, data);
+      if (cache.size > CACHE_LIMITS[quality]) cache.delete(cache.keys().next().value);
+      return data;
+    })
+    .finally(() => frontlineInflight.delete(key));
+  frontlineInflight.set(key, request);
+  return request;
+}
+
+function swapFrontline(data, quality) {
+  const next = L.geoJSON(data, {
+    pane: 'frontline',
+    style: FRONTLINE_STYLE,
+    interactive: false
+  }).addTo(map);
+  if (frontlineLayer) map.removeLayer(frontlineLayer);
+  frontlineLayer = next;
+  shownQuality = quality;
+}
+
+function showDate(i) {
+  const date = frontlineDates[i];
+  if (tlDate) tlDate.value = date;
+  setFrontlineLabel(`as of ${date}`);
+}
+
+function prefetchAhead(from, stride) {
+  for (let k = 1; k <= PREFETCH_AHEAD; k++) {
+    const idx = from + k * stride;
+    if (idx < 0 || idx >= frontlineDates.length) break;
+    getSnapshot(frontlineDates[idx], 'lite').catch(() => {});
+  }
+}
+
+function settle() {
+  const i = playhead;
+  if (i < 0 || shownQuality === 'full') return;
+  const token = ++settleToken;
+  getSnapshot(frontlineDates[i], 'full')
+    .then(data => {
+      if (running || token !== settleToken || playhead !== i) return;
+      swapFrontline(data, 'full');
+    })
+    .catch(() => {});
+}
+
+function step(id) {
+  if (id !== runId) return;
+  if (!animate) {
+    running = false;
+    return;
+  }
+  if (playhead === target) {
+    running = false;
+    clearTimeout(settleTimer);
+    settleTimer = setTimeout(settle, 300);
+    return;
+  }
+  const dist = target - playhead;
+  const dir = Math.sign(dist);
+  const stride = moveStride;
+  let next = playhead + dir * stride;
+  if ((dir > 0 && next > target) || (dir < 0 && next < target)) next = target;
+  prefetchAhead(next, dir * stride);
+  getSnapshot(frontlineDates[next], 'lite')
+    .then(data => {
+      if (id !== runId) return;
+      if (!animate) {
+        running = false;
+        return;
+      }
+      swapFrontline(data, 'lite');
+      playhead = next;
+      setTimeout(() => step(id), FRAME_MS);
+    })
+    .catch(err => {
+      if (id !== runId) return;
+      running = false;
       console.error('Failed to load frontline:', err);
       setFrontlineLabel('snapshot unavailable');
-    }
-  }
+    });
 }
 
-function pickSnapshot(index, immediate) {
-  if (!frontlineDates.length) return;
-  const i = Math.max(0, Math.min(frontlineDates.length - 1, index));
+function jumpTo(i) {
+  runId++;
+  running = false;
+  target = i;
+  playhead = i;
+  clearTimeout(settleTimer);
+  settleToken++;
+  showDate(i);
+  clearTimeout(jumpTimer);
   const date = frontlineDates[i];
-  tlSlider.value = i;
-  tlLabel.textContent = date;
-  setFrontlineLabel(`as of ${date}`);
-  clearTimeout(frontlineTimer);
-  if (immediate) {
-    showFrontline(date);
-  } else {
-    frontlineTimer = setTimeout(() => showFrontline(date), 250);
+  jumpTimer = setTimeout(() => {
+    getSnapshot(date, 'full')
+      .then(data => {
+        if (playhead !== i) return;
+        swapFrontline(data, 'full');
+      })
+      .catch(() => setFrontlineLabel('snapshot unavailable'));
+  }, frontlineCache.full.has(date) ? 0 : 120);
+}
+
+function setTarget(index) {
+  if (!frontlineDates.length) return;
+  target = Math.max(0, Math.min(frontlineDates.length - 1, index));
+  if (!animate) {
+    jumpTo(target);
+    return;
+  }
+  moveStride = Math.max(1, Math.ceil(Math.abs(target - playhead) / MAX_FRAMES_PER_MOVE));
+  showDate(target);
+  clearTimeout(settleTimer);
+  settleToken++;
+  if (!running) {
+    running = true;
+    step(runId);
   }
 }
 
-tlSlider.addEventListener('input', () => pickSnapshot(parseInt(tlSlider.value, 10), false));
-document.getElementById('tl-prev').addEventListener('click', () => pickSnapshot(parseInt(tlSlider.value, 10) - 1, false));
-document.getElementById('tl-next').addEventListener('click', () => pickSnapshot(parseInt(tlSlider.value, 10) + 1, false));
-document.getElementById('tl-latest').addEventListener('click', () => pickSnapshot(frontlineDates.length - 1, true));
+function loadLatestFrontline() {
+  fetch('/api/frontline')
+    .then(res => {
+      if (!res.ok) throw new Error('Frontline unavailable');
+      return res.json();
+    })
+    .then(data => swapFrontline(data, 'full'))
+    .catch(err => {
+      console.error('Failed to load frontline:', err);
+      setFrontlineLabel('date unavailable');
+    });
+}
+
+let lastInputAt = 0;
+
+if (tlSlider) {
+  tlSlider.addEventListener('input', () => {
+    const now = Date.now();
+    const index = parseInt(tlSlider.value, 10);
+    const startsGesture = now - lastInputAt > 250;
+    lastInputAt = now;
+    const from = target < 0 ? playhead : target;
+    if (startsGesture && Math.abs(index - from) > 2) {
+      jumpTo(index);
+      return;
+    }
+    setTarget(index);
+  });
+}
+
+if (tlAnim) {
+  tlAnim.checked = animate;
+  tlAnim.addEventListener('change', () => {
+    animate = tlAnim.checked;
+    try {
+      localStorage.setItem('frontlineAnimate', animate ? 'on' : 'off');
+    } catch (err) {}
+    if (!animate && frontlineDates.length) jumpTo(target < 0 ? playhead : target);
+  });
+}
+
+if (tlDate) {
+  tlDate.addEventListener('change', () => {
+    clearTimeout(dateTimer);
+    dateTimer = setTimeout(() => {
+      if (!frontlineDates.length) return;
+      const wanted = Date.parse(tlDate.value);
+      const first = Date.parse(frontlineDates[0]);
+      const last = Date.parse(frontlineDates[frontlineDates.length - 1]);
+      if (isNaN(wanted) || wanted < first || wanted > last) {
+        showDate(playhead);
+        return;
+      }
+      let best = 0;
+      let bestGap = Infinity;
+      frontlineDates.forEach((d, i) => {
+        const gap = Math.abs(Date.parse(d) - wanted);
+        if (gap < bestGap) {
+          bestGap = gap;
+          best = i;
+        }
+      });
+      if (tlSlider) tlSlider.value = best;
+      jumpTo(best);
+    }, 400);
+  });
+}
 
 fetch('/api/frontline-dates')
   .then(res => res.json())
@@ -388,16 +575,32 @@ fetch('/api/frontline-dates')
     frontlineDates = Array.isArray(dates) ? dates : [];
     if (!frontlineDates.length) {
       setFrontlineLabel('date unavailable');
-      showFrontline(null);
+      loadLatestFrontline();
       return;
     }
-    tlSlider.max = frontlineDates.length - 1;
-    document.getElementById('timeline-row').hidden = false;
-    pickSnapshot(frontlineDates.length - 1, true);
+    const last = frontlineDates.length - 1;
+    if (tlDate) {
+      tlDate.min = frontlineDates[0];
+      tlDate.max = frontlineDates[last];
+    }
+    if (tlSlider) {
+      tlSlider.max = last;
+      tlSlider.value = last;
+    }
+    if (tlRow) tlRow.hidden = false;
+    playhead = last;
+    target = last;
+    showDate(last);
+    getSnapshot(frontlineDates[last], 'full')
+      .then(data => swapFrontline(data, 'full'))
+      .catch(err => {
+        console.error('Failed to load frontline:', err);
+        setFrontlineLabel('snapshot unavailable');
+      });
   })
   .catch(() => {
     setFrontlineLabel('date unavailable');
-    showFrontline(null);
+    loadLatestFrontline();
   });
 
 fetch('/api/stats?days=7')

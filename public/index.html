@@ -31,6 +31,12 @@
     <div class="unlocated-row">
       <span id="unlocated-link" class="unlocated-link">No location: <span id="unlocated-count">…</span> of <span id="unlocated-total">…</span> reports this week</span>
     </div>
+    <div class="timeline-row" id="timeline-row" hidden>
+      <span class="legend-title">Front line</span>
+      <input id="tl-slider" type="range" min="0" max="0" value="0" step="1">
+      <input id="tl-date" type="date">
+      <label><input id="tl-anim" type="checkbox" checked> Animate</label>
+    </div>
     <div class="legend-note">Pin size = reports in the last 7 days. Types are guessed from keywords and may be wrong. Red area = Russian-occupied territory (<a href="https://deepstatemap.live" target="_blank" rel="noopener">DeepState</a> data, <span id="frontline-date">loading</span>).</div>
   </div>
 

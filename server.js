@@ -6,6 +6,7 @@ const Database = require('better-sqlite3');
 const fs = require('fs');
 const path = require('path');
 const rateLimit = require('express-rate-limit');
+const turf = require('@turf/turf');
 const { locatePlace, isIndexPage } = require('./placerules');
 
 const parser = new RSSParser({ timeout: 10000 });
@@ -18,6 +19,7 @@ app.use('/api', rateLimit({
   limit: 120,
   standardHeaders: true,
   legacyHeaders: false,
+  skip: (req) => req.path === '/frontline' || req.path === '/frontline-dates',
   message: { error: 'Too many requests, slow down' }
 }));
 
@@ -25,8 +27,10 @@ app.use(express.static('public'));
 
 const dataDir = path.join(__dirname, 'data');
 const frontlineDir = path.join(dataDir, 'frontline');
+const frontlineLiteDir = path.join(dataDir, 'frontline-lite');
 const geonamesFile = path.join(dataDir, 'geonames', 'UA.txt');
 fs.mkdirSync(frontlineDir, { recursive: true });
+fs.mkdirSync(frontlineLiteDir, { recursive: true });
 fs.mkdirSync(path.dirname(geonamesFile), { recursive: true });
 
 const CANONICAL = {
@@ -339,6 +343,23 @@ async function syncFrontline() {
 
 const DATE_PARAM = /^\d{4}-\d{2}-\d{2}$/;
 
+function liteSnapshotPath(name) {
+  const out = path.join(frontlineLiteDir, name);
+  if (fs.existsSync(out)) return out;
+  try {
+    const geo = JSON.parse(fs.readFileSync(path.join(frontlineDir, name), 'utf8'));
+    turf.simplify(geo, { tolerance: 0.004, highQuality: false, mutate: true });
+    turf.truncate(geo, { precision: 4, mutate: true });
+    const tmp = out + '.tmp';
+    fs.writeFileSync(tmp, JSON.stringify(geo));
+    fs.renameSync(tmp, out);
+    return out;
+  } catch (err) {
+    console.log('Frontline: could not simplify', name, '-', err.message);
+    return null;
+  }
+}
+
 app.get('/api/frontline-dates', (req, res) => {
   res.json(localFrontlineFiles().map(frontlineDateFromName));
 });
@@ -354,6 +375,10 @@ app.get('/api/frontline', (req, res) => {
       return res.status(404).json({ error: 'No snapshot for that date' });
     }
     res.set('Cache-Control', 'public, max-age=3600');
+    if (req.query.quality === 'lite') {
+      const lite = liteSnapshotPath(name);
+      if (lite) return res.sendFile(lite);
+    }
     return res.sendFile(path.join(frontlineDir, name));
   }
   const latest = loadLatestFrontline();
