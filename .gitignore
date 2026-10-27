@@ -3,3 +3,4 @@ node_modules/
 data/*
 !data/labels.json
 !data/label-sample.json
+!data/articles.db
