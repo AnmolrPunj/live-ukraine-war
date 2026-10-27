@@ -1,3 +1,5 @@
 node_modules/
 .env
-data/
+data/*
+!data/labels.json
+!data/label-sample.json

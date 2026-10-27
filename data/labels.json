@@ -1,0 +1,702 @@
+[
+  {
+    "id": 18,
+    "title": "Putin the Humanist? 10 Ways Russia Has Shown Its ‘Humanity’ in Ukraine",
+    "predicted": "diplomatic",
+    "label": "humanitarian",
+    "at": "2026-10-23T04:08:52.733Z"
+  },
+  {
+    "id": 218,
+    "title": "Putin Nears a Prize: Restoring Ties With the U.S. While Giving Up Nothing",
+    "predicted": "diplomatic",
+    "label": "diplomatic",
+    "at": "2026-10-23T04:08:56.765Z"
+  },
+  {
+    "id": 17,
+    "title": "NATO to Open Centralized Arms Purchases for Ukraine",
+    "predicted": "diplomatic",
+    "label": "military",
+    "at": "2026-10-23T04:08:59.695Z"
+  },
+  {
+    "id": 82,
+    "title": "Kremlin Confirms Lukoil Negotiations With Washington",
+    "predicted": "diplomatic",
+    "label": "diplomatic",
+    "at": "2026-10-23T04:09:30.810Z"
+  },
+  {
+    "id": 30,
+    "title": "Ukraine hit by strikes after Russia agrees to new peace talks",
+    "predicted": "diplomatic",
+    "label": "military",
+    "at": "2026-10-23T04:10:43.509Z"
+  },
+  {
+    "id": 209,
+    "title": "Son of Stephen Hubbard, American freed from Russian jail, speaks out",
+    "predicted": "military",
+    "label": "humanitarian",
+    "at": "2026-10-23T04:10:49.516Z"
+  },
+  {
+    "id": 11,
+    "title": "‘Wrong and Unacceptable’: Zelensky Accuses Trump of Shifting Iran Blame to Kyiv",
+    "predicted": "diplomatic",
+    "label": "diplomatic",
+    "at": "2026-10-23T04:10:52.811Z"
+  },
+  {
+    "id": 97,
+    "title": "Wounded Ukrainian Soldier Rescued From Front Lines By Aerial Drone",
+    "predicted": "military",
+    "label": "military",
+    "at": "2026-10-23T04:10:56.559Z"
+  },
+  {
+    "id": 20,
+    "title": "Zelensky on Overnight Strike: ‘Russian ‘Humanists’ Launch 21 Ballistic Missiles at Kyiv in 3 Waves’",
+    "predicted": "military",
+    "label": "military",
+    "at": "2026-10-23T04:11:00.174Z"
+  },
+  {
+    "id": 215,
+    "title": "Stephen Hubbard released by Russia after years in prison",
+    "predicted": "diplomatic",
+    "label": "humanitarian",
+    "at": "2026-10-23T04:11:02.592Z"
+  },
+  {
+    "id": 42,
+    "title": "Ukraine war briefing: New peace proposals lack ‘substance’, says Kremlin after Witkoff-Putin meeting in Russia",
+    "predicted": "diplomatic",
+    "label": "diplomatic",
+    "at": "2026-10-23T04:12:56.602Z"
+  },
+  {
+    "id": 14,
+    "title": "Sloviansk Expands Forced Evacuation Zone for Families With Children to Entire Community",
+    "predicted": "humanitarian",
+    "label": "humanitarian",
+    "at": "2026-10-23T04:12:58.358Z"
+  },
+  {
+    "id": 44,
+    "title": "Decoding America: Katie Zacharia and Trump’s women problem – video",
+    "predicted": "diplomatic",
+    "label": "unsure",
+    "at": "2026-10-23T04:13:05.996Z"
+  },
+  {
+    "id": 54,
+    "title": "‘Putin Has Killed Thousands’ – Downing Street Rebukes Witkoff for Calling Russian Leader ‘Humanitarian’",
+    "predicted": "diplomatic",
+    "label": "diplomatic",
+    "at": "2026-10-23T04:13:15.718Z"
+  },
+  {
+    "id": 68,
+    "title": "Russia’s New Filin Missile Uses US, Chinese Electronics",
+    "predicted": "military",
+    "label": "military",
+    "at": "2026-10-23T04:13:18.334Z"
+  },
+  {
+    "id": 99,
+    "title": "After Oslo Talks, Zelenskyy Thanks US As Missile Intelligence 'Works Now'",
+    "predicted": "diplomatic",
+    "label": "diplomatic",
+    "at": "2026-10-23T04:15:33.767Z"
+  },
+  {
+    "id": 110,
+    "title": "Russia Still Needs More Soldiers. The Kremlin Is Still Desperate To Avoid Mobilization",
+    "predicted": "diplomatic",
+    "label": "military",
+    "at": "2026-10-23T04:15:52.080Z"
+  },
+  {
+    "id": 27,
+    "title": "Ukraine: Life near the front line in Sloviansk",
+    "predicted": "military",
+    "label": "humanitarian",
+    "at": "2026-10-23T04:18:42.005Z"
+  },
+  {
+    "id": 93,
+    "title": "Trump Says Musk Has Lifted Starlink Restrictions On Ukraine After Kyiv Reported Ongoing Issues",
+    "predicted": "diplomatic",
+    "label": "diplomatic",
+    "at": "2026-10-23T04:18:47.939Z"
+  },
+  {
+    "id": 9,
+    "title": "Russia Strikes Crowded Market in Lozova, Killing 2, Wounding 36",
+    "predicted": "military",
+    "label": "military",
+    "at": "2026-10-23T04:18:50.112Z"
+  },
+  {
+    "id": 206,
+    "title": "Zelenskyy accuses Russia of using cluster warheads in deadly strikes",
+    "predicted": "diplomatic",
+    "label": "military",
+    "at": "2026-10-23T04:18:54.627Z"
+  },
+  {
+    "id": 34,
+    "title": "Inside the shadowy world of anti-Putin sabotage from within Russia",
+    "predicted": "diplomatic",
+    "label": "diplomatic",
+    "at": "2026-10-23T04:19:13.266Z"
+  },
+  {
+    "id": 64,
+    "title": "‘Abandon Ukraine, Embrace Putin’: Bill Clinton Slams Trump as Hillary Calls Him a ‘Willing Putin Puppet’",
+    "predicted": "diplomatic",
+    "label": "diplomatic",
+    "at": "2026-10-23T04:19:26.426Z"
+  },
+  {
+    "id": 114,
+    "title": "Russia arrests German man, calls him a Ukraine 'mercenary'",
+    "predicted": "military",
+    "label": "diplomatic",
+    "at": "2026-10-23T04:19:34.421Z"
+  },
+  {
+    "id": 207,
+    "title": "Stephen Hubbard returns to U.S. after Russian detention",
+    "predicted": "diplomatic",
+    "label": "diplomatic",
+    "at": "2026-10-23T04:19:48.035Z"
+  },
+  {
+    "id": 216,
+    "title": "Iran touts closest ever ties with Russia, contradicting Trump",
+    "predicted": "diplomatic",
+    "label": "diplomatic",
+    "at": "2026-10-23T04:19:56.634Z"
+  },
+  {
+    "id": 105,
+    "title": "Zelenskyy Says Russia Seeking Blackout In Ukraine After Latest Onslaught On Energy Facilities",
+    "predicted": "diplomatic",
+    "label": "military",
+    "at": "2026-10-23T04:20:52.898Z"
+  },
+  {
+    "id": 16,
+    "title": "Trump Could Force Putin to Negotiate but Hasn’t, Zelensky Says",
+    "predicted": "diplomatic",
+    "label": "diplomatic",
+    "at": "2026-10-23T04:20:58.610Z"
+  },
+  {
+    "id": 102,
+    "title": "Rubio Vows To Keep Pushing For Ukraine Peace, Seeks Deeper US Ties In Central Asia",
+    "predicted": "diplomatic",
+    "label": "diplomatic",
+    "at": "2026-10-23T04:21:01.005Z"
+  },
+  {
+    "id": 349,
+    "title": "Russia Launches Massive Drone Attack on Sumy as Moscow Continues Strikes Despite Peace Talks",
+    "predicted": "military",
+    "label": "military",
+    "at": "2026-10-23T04:21:02.587Z"
+  },
+  {
+    "id": 3,
+    "title": "Russia strikes Kyiv hours after agreeing to US-brokered peace talks – video",
+    "predicted": "diplomatic",
+    "label": "military",
+    "at": "2026-10-23T04:21:03.943Z"
+  },
+  {
+    "id": 36,
+    "title": "Ukraine war briefing: Uncertainty over Kyiv’s Starlink access after Trump claims Musk restored service",
+    "predicted": "diplomatic",
+    "label": "diplomatic",
+    "at": "2026-10-23T04:21:06.697Z"
+  },
+  {
+    "id": 92,
+    "title": "Ukraine Cuts Chinese Drone Dependence, But Critical Gaps Remain",
+    "predicted": "military",
+    "label": "diplomatic",
+    "at": "2026-10-23T04:21:09.678Z"
+  },
+  {
+    "id": 53,
+    "title": "Trump Says Musk Restored Ukraine’s Starshield",
+    "predicted": "diplomatic",
+    "label": "diplomatic",
+    "at": "2026-10-23T04:21:12.991Z"
+  },
+  {
+    "id": 208,
+    "title": "U.K. interests in the Arctic are vulnerable to Russia, lawmakers warn",
+    "predicted": "diplomatic",
+    "label": "diplomatic",
+    "at": "2026-10-23T04:21:18.249Z"
+  },
+  {
+    "id": 12,
+    "title": "Vance: Starlink Use Depends on US Policy Toward Kyiv, Moscow – Not Musk",
+    "predicted": "diplomatic",
+    "label": "diplomatic",
+    "at": "2026-10-23T04:21:25.072Z"
+  },
+  {
+    "id": 63,
+    "title": "Germany Arrests Ukrainian Suspected of Spying for Russia",
+    "predicted": "diplomatic",
+    "label": "diplomatic",
+    "at": "2026-10-23T04:21:26.898Z"
+  },
+  {
+    "id": 98,
+    "title": "'Everything Is Dead': Ukraine Liberates Dnipropetrovsk Settlements, But Villages Lie In Ruins",
+    "predicted": "military",
+    "label": "humanitarian",
+    "at": "2026-10-23T04:21:43.728Z"
+  },
+  {
+    "id": 103,
+    "title": "Trump Again Criticizes Zelenskyy, Says Open To Meeting With Putin And Xi",
+    "predicted": "diplomatic",
+    "label": "diplomatic",
+    "at": "2026-10-23T04:21:46.597Z"
+  },
+  {
+    "id": 4,
+    "title": "Donald Trump has sold out Ukraine. He makes appeaser Chamberlain look like a man of iron principle | Simon Tisdall",
+    "predicted": "diplomatic",
+    "label": "diplomatic",
+    "at": "2026-10-23T04:21:49.867Z"
+  },
+  {
+    "id": 29,
+    "title": "Trump says Musk has restored access to Ukraine's Starlink network",
+    "predicted": "diplomatic",
+    "label": "diplomatic",
+    "at": "2026-10-23T04:21:52.272Z"
+  },
+  {
+    "id": 1,
+    "title": "Downing Street rejects Witkoff’s description of Putin as a ‘humanitarian’",
+    "predicted": "diplomatic",
+    "label": "diplomatic",
+    "at": "2026-10-23T04:22:06.545Z"
+  },
+  {
+    "id": 203,
+    "title": "Former U.S. Ambassador to Ukraine William Taylor on Trump's embrace of Russia",
+    "predicted": "diplomatic",
+    "label": "diplomatic",
+    "at": "2026-10-23T04:22:07.712Z"
+  },
+  {
+    "id": 219,
+    "title": "When Starshield Cut Out, Ukrainian Drones Fell From the Skies",
+    "predicted": "military",
+    "label": "unsure",
+    "at": "2026-10-23T04:22:15.715Z"
+  },
+  {
+    "id": 24,
+    "title": "Zelensky Confirms Trilateral Talks With US, Russia Could Take Place by Early November",
+    "predicted": "diplomatic",
+    "label": "diplomatic",
+    "at": "2026-10-23T04:22:26.515Z"
+  },
+  {
+    "id": 52,
+    "title": "Republicans push back on Donald Trump’s wavering support for Ukraine",
+    "predicted": "diplomatic",
+    "label": "diplomatic",
+    "at": "2026-10-23T04:22:30.403Z"
+  },
+  {
+    "id": 212,
+    "title": "Witkoff blasted for calling Putin a \"humanitarian\"",
+    "predicted": "diplomatic",
+    "label": "diplomatic",
+    "at": "2026-10-23T04:22:35.581Z"
+  },
+  {
+    "id": 19,
+    "title": "‘We Outplayed Them’: Ukraine Claims First Underground Counteroffensive",
+    "predicted": "military",
+    "label": "military",
+    "at": "2026-10-23T04:22:38.531Z"
+  },
+  {
+    "id": 350,
+    "title": "‘Starshield Still Limited’ – Zelensky Says Restrictions Continue to Hamper Ukraine’s Drone Defenses",
+    "predicted": "diplomatic",
+    "label": "military",
+    "at": "2026-10-23T04:22:44.316Z"
+  },
+  {
+    "id": 210,
+    "title": "American Stephen Hubbard released by Russia, Trump confirms",
+    "predicted": "diplomatic",
+    "label": "diplomatic",
+    "at": "2026-10-23T04:22:46.819Z"
+  },
+  {
+    "id": 79,
+    "title": "‘Red Line Crossed’: Germany Raises Russian Sabotage Threat to ‘Significant’ for First Time",
+    "predicted": "military",
+    "label": "diplomatic",
+    "at": "2026-10-23T04:22:50.658Z"
+  },
+  {
+    "id": 38,
+    "title": "Race to rearm: Telford gun hall brings tank barrel production back to the UK",
+    "predicted": "diplomatic",
+    "label": "military",
+    "at": "2026-10-23T04:23:22.066Z"
+  },
+  {
+    "id": 48,
+    "title": "Katie Zacharia and Trump’s women problem – podcast",
+    "predicted": "diplomatic",
+    "label": "unsure",
+    "at": "2026-10-23T04:23:57.555Z"
+  },
+  {
+    "id": 67,
+    "title": "Witkoff Meets Putin: Any Progress on Ukraine?",
+    "predicted": "diplomatic",
+    "label": "diplomatic",
+    "at": "2026-10-23T04:24:02.020Z"
+  },
+  {
+    "id": 205,
+    "title": "Elon Musk's Starlink and Starshield, and what they mean to Ukraine",
+    "predicted": "military",
+    "label": "diplomatic",
+    "at": "2026-10-23T04:24:05.548Z"
+  },
+  {
+    "id": 22,
+    "title": "‘Capitulating to a Dictator Shows Weakness’ – Republican Senator Slams Trump’s Russia Policy",
+    "predicted": "diplomatic",
+    "label": "diplomatic",
+    "at": "2026-10-23T04:24:08.547Z"
+  },
+  {
+    "id": 100,
+    "title": "Funeral Held For Five Children From One Ukrainian Family Killed In Russian Strike In July",
+    "predicted": "military",
+    "label": "humanitarian",
+    "at": "2026-10-23T04:24:10.667Z"
+  },
+  {
+    "id": 85,
+    "title": "Trump Envoy Grilled for Calling Putin a ‘Humanitarian’",
+    "predicted": "diplomatic",
+    "label": "diplomatic",
+    "at": "2026-10-23T04:24:13.181Z"
+  },
+  {
+    "id": 115,
+    "title": "Russia frees jailed American Stephen Hubbard during Witkoff talks",
+    "predicted": "diplomatic",
+    "label": "diplomatic",
+    "at": "2026-10-23T04:24:15.500Z"
+  },
+  {
+    "id": 95,
+    "title": "US Citizen Accused By Moscow Of Fighting For Ukraine Released From Russian Prison",
+    "predicted": "diplomatic",
+    "label": "diplomatic",
+    "at": "2026-10-23T04:24:17.098Z"
+  },
+  {
+    "id": 15,
+    "title": "Russia Hits Central Kyiv With Cluster Missile",
+    "predicted": "military",
+    "label": "military",
+    "at": "2026-10-23T04:24:18.672Z"
+  },
+  {
+    "id": 7,
+    "title": "US has resumed sharing intelligence with Ukraine about Russian strikes, says Zelenskyy",
+    "predicted": "diplomatic",
+    "label": "diplomatic",
+    "at": "2026-10-23T04:24:21.919Z"
+  },
+  {
+    "id": 37,
+    "title": "Ben Jennings on Donald Trump’s flattery of Vladimir Putin – cartoon",
+    "predicted": "diplomatic",
+    "label": "unsure",
+    "at": "2026-10-23T04:24:29.917Z"
+  },
+  {
+    "id": 108,
+    "title": "Russia's Deadly Attacks Damage Homes, Energy Sites In Ukraine As Kyiv Says Starlink Restrictions Continue",
+    "predicted": "military",
+    "label": "diplomatic",
+    "at": "2026-10-23T04:24:34.857Z"
+  },
+  {
+    "id": 211,
+    "title": "Stephen Hubbard's son after his release from Russian prison: \"I want to embrace him\"",
+    "predicted": "humanitarian",
+    "label": "diplomatic",
+    "at": "2026-10-23T04:24:36.902Z"
+  },
+  {
+    "id": 75,
+    "title": "Europe Weighs Naming Envoy to Negotiate With Putin on Ukraine",
+    "predicted": "diplomatic",
+    "label": "diplomatic",
+    "at": "2026-10-23T04:24:45.834Z"
+  },
+  {
+    "id": 46,
+    "title": "Thousands march in Greece over public education failures as Macron blasts ‘stupid’ commentary on French protests – as it happened",
+    "predicted": "diplomatic",
+    "label": "unsure",
+    "at": "2026-10-23T04:24:49.336Z"
+  },
+  {
+    "id": 106,
+    "title": "Russia Pounds Ukraine With Missiles And Hundreds Of Drones",
+    "predicted": "military",
+    "label": "military",
+    "at": "2026-10-23T04:24:50.984Z"
+  },
+  {
+    "id": 47,
+    "title": "​Europe stands by Ukraine – but how long can that last?",
+    "predicted": "diplomatic",
+    "label": "diplomatic",
+    "at": "2026-10-23T04:24:53.226Z"
+  },
+  {
+    "id": 31,
+    "title": "Rosenberg: Russia agrees to Ukraine talks but sees little to talk about in new peace push",
+    "predicted": "diplomatic",
+    "label": "diplomatic",
+    "at": "2026-10-23T04:24:55.090Z"
+  },
+  {
+    "id": 90,
+    "title": "Italy Investigates Russia’s Possible Role in Violent Protests",
+    "predicted": "diplomatic",
+    "label": "unsure",
+    "at": "2026-10-23T04:24:59.654Z"
+  },
+  {
+    "id": 13,
+    "title": "Russian Shahed Drone Strikes Private Home in Zhytomyr, Injuring 8, Including 2 Children",
+    "predicted": "military",
+    "label": "humanitarian",
+    "at": "2026-10-23T04:25:01.729Z"
+  },
+  {
+    "id": 109,
+    "title": "Trump Waives Graham Act Sanctions On Russia Before They Take Effect",
+    "predicted": "diplomatic",
+    "label": "diplomatic",
+    "at": "2026-10-23T04:25:06.094Z"
+  },
+  {
+    "id": 104,
+    "title": "Ukrainian Officials Slam Trump's Waiver Of Russia Sanctions As Rubio Defends Move",
+    "predicted": "diplomatic",
+    "label": "diplomatic",
+    "at": "2026-10-23T04:25:08.383Z"
+  },
+  {
+    "id": 213,
+    "title": "10/21: The Takeout with Major Garrett",
+    "predicted": "diplomatic",
+    "label": "unsure",
+    "at": "2026-10-23T04:25:14.916Z"
+  },
+  {
+    "id": 96,
+    "title": "After Witkoff Meeting, Putin 'Ready To Resume' US-Led Peace Talks With Ukraine",
+    "predicted": "diplomatic",
+    "label": "diplomatic",
+    "at": "2026-10-23T04:25:19.241Z"
+  },
+  {
+    "id": 94,
+    "title": "Amid Russia's Onslaught, A Twist In The Pursuit Of Men Fleeing Ukraine For Moldova",
+    "predicted": "military",
+    "label": "humanitarian",
+    "at": "2026-10-23T04:25:25.304Z"
+  },
+  {
+    "id": 25,
+    "title": "Russian FPV Drone Destroys Swiss-Donated Evacuation Vehicle in Donetsk Region",
+    "predicted": "military",
+    "label": "military",
+    "at": "2026-10-23T04:25:32.030Z"
+  },
+  {
+    "id": 26,
+    "title": "Ukraine Counts on Beijing’s ‘Constructive Role’ as Sybiha Meets Chinese Ambassador",
+    "predicted": "diplomatic",
+    "label": "diplomatic",
+    "at": "2026-10-23T04:25:34.056Z"
+  },
+  {
+    "id": 55,
+    "title": "‘More Money Means More Dead Ukrainians’ – Kasparov Warns Against Deals With Moscow",
+    "predicted": "diplomatic",
+    "label": "diplomatic",
+    "at": "2026-10-23T04:25:44.446Z"
+  },
+  {
+    "id": 217,
+    "title": "Escaped Ukrainian teen tells of abuses growing up under Russian occupation",
+    "predicted": "military",
+    "label": "humanitarian",
+    "at": "2026-10-23T04:25:46.854Z"
+  },
+  {
+    "id": 101,
+    "title": "Star Wars: A Russian Military Satellite Gets Very, Very Close To One Used By Ukraine",
+    "predicted": "diplomatic",
+    "label": "military",
+    "at": "2026-10-23T04:25:50.830Z"
+  },
+  {
+    "id": 83,
+    "title": "Witkoff Reveals US Treasury Working With Putin’s Envoy on Economic Ties",
+    "predicted": "diplomatic",
+    "label": "diplomatic",
+    "at": "2026-10-23T04:25:57.654Z"
+  },
+  {
+    "id": 21,
+    "title": "Russian Attacks Kill 4 Civilians, Injure at Least a Dozen Across Ukraine in Overnight Drone Strike",
+    "predicted": "military",
+    "label": "military",
+    "at": "2026-10-23T04:26:00.239Z"
+  },
+  {
+    "id": 23,
+    "title": "Russia Pounds Kyiv in Overnight Missile and Drone Barrage – 1 Dead, 24 Injured, Including 4 Children",
+    "predicted": "military",
+    "label": "military",
+    "at": "2026-10-23T04:26:03.650Z"
+  },
+  {
+    "id": 89,
+    "title": "Bundeswehr Raises Threat Level, Warns of Potential Russian Attacks",
+    "predicted": "military",
+    "label": "military",
+    "at": "2026-10-23T04:26:13.996Z"
+  },
+  {
+    "id": 112,
+    "title": "Bulgaria: Concerns about security in the Black Sea dominate presidential election campaign",
+    "predicted": "diplomatic",
+    "label": "diplomatic",
+    "at": "2026-10-23T04:26:17.351Z"
+  },
+  {
+    "id": 2,
+    "title": "Russia bombards Kyiv with missiles hours after agreeing to resume talks with Ukraine",
+    "predicted": "military",
+    "label": "military",
+    "at": "2026-10-23T04:26:24.960Z"
+  },
+  {
+    "id": 33,
+    "title": "Trump and Zelensky at loggerheads despite new optimism",
+    "predicted": "diplomatic",
+    "label": "diplomatic",
+    "at": "2026-10-23T04:26:27.700Z"
+  },
+  {
+    "id": 5,
+    "title": "‘You are a humanitarian also, sir’: the US feeds Putin with lies as Ukraine’s children take cover and die | Andrew Roth",
+    "predicted": "diplomatic",
+    "label": "humanitarian",
+    "at": "2026-10-23T04:26:30.960Z"
+  },
+  {
+    "id": 81,
+    "title": "630 Drones Toward Moscow, Russian Military Repair Plant Reportedly Hit",
+    "predicted": "military",
+    "label": "military",
+    "at": "2026-10-23T04:26:36.504Z"
+  },
+  {
+    "id": 8,
+    "title": "Nato increases Black Sea deployment amid escalating deadly Russian attacks",
+    "predicted": "diplomatic",
+    "label": "military",
+    "at": "2026-10-23T04:26:38.987Z"
+  },
+  {
+    "id": 214,
+    "title": "Russia says Ukraine must make \"necessary decisions\" to end the war",
+    "predicted": "diplomatic",
+    "label": "diplomatic",
+    "at": "2026-10-23T04:26:40.640Z"
+  },
+  {
+    "id": 43,
+    "title": "Putin orders release of jailed American as he meets Trump envoy for Ukraine talks",
+    "predicted": "diplomatic",
+    "label": "diplomatic",
+    "at": "2026-10-23T04:26:43.130Z"
+  },
+  {
+    "id": 72,
+    "title": "Report: Shahed Factory Gets Putin-Style Air Defenses",
+    "predicted": "diplomatic",
+    "label": "unsure",
+    "at": "2026-10-23T04:26:48.295Z"
+  },
+  {
+    "id": 204,
+    "title": "Kara Swisher on Elon Musk: 'He's unelected, unaccountable, enormously wealthy'",
+    "predicted": "military",
+    "label": "unsure",
+    "at": "2026-10-23T04:26:52.556Z"
+  },
+  {
+    "id": 28,
+    "title": "Trump, Putin and Xi at one table, without Ukraine. What Moscow wants from the proposal and why Beijing might agree.",
+    "predicted": "diplomatic",
+    "label": "diplomatic",
+    "at": "2026-10-23T04:26:56.800Z"
+  },
+  {
+    "id": 307,
+    "title": "Trump says Musk restored Ukraine’s Starlink access amid Russia war",
+    "predicted": "diplomatic",
+    "label": "diplomatic",
+    "at": "2026-10-23T04:26:58.525Z"
+  },
+  {
+    "id": 91,
+    "title": "US Accuses Russia Of 'Deliberately Reckless' Move With Military Satellite Flyby",
+    "predicted": "diplomatic",
+    "label": "humanitarian",
+    "at": "2026-10-23T04:27:01.826Z"
+  },
+  {
+    "id": 78,
+    "title": "Buyer and Supplier: How China Sustains Russia’s War",
+    "predicted": "diplomatic",
+    "label": "diplomatic",
+    "at": "2026-10-23T04:27:05.080Z"
+  }
+]

@@ -387,7 +387,7 @@ document.querySelectorAll('.filter').forEach(el => {
   });
 });
 
-fetch('https://raw.githubusercontent.com/datasets/geo-countries/master/data/countries.geojson')
+fetch('borders.json')
   .then(res => res.json())
   .then(data => {
     L.geoJSON(data, {
