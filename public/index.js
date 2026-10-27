@@ -420,8 +420,8 @@ frontlinePane.style.pointerEvents = 'none';
 
 const FRAME_MS = 70;
 const MAX_FRAMES_PER_MOVE = 30;
-const PREFETCH_AHEAD = 4;
-const CACHE_LIMITS = { lite: 150, full: 10 };
+const PREFETCH_AHEAD = 8;
+const CACHE_LIMITS = { lite: 900, full: 10 };
 
 let frontlineLayer = null;
 const frontlineCache = { lite: new Map(), full: new Map() };
@@ -482,6 +482,19 @@ function swapFrontline(data, quality) {
   if (frontlineLayer) map.removeLayer(frontlineLayer);
   frontlineLayer = next;
   shownQuality = quality;
+}
+
+function warmAll() {
+  const saver = navigator.connection && navigator.connection.saveData;
+  if (saver || window.matchMedia('(pointer: coarse)').matches) return;
+  const queue = frontlineDates.slice().reverse();
+  const run = () => {
+    const date = queue.shift();
+    if (!date) return;
+    getSnapshot(date, 'lite').catch(() => {}).then(run);
+  };
+  run();
+  run();
 }
 
 function showDate(i) {
@@ -675,7 +688,10 @@ fetch('/api/frontline-dates')
     target = last;
     showDate(last);
     getSnapshot(frontlineDates[last], 'full')
-      .then(data => swapFrontline(data, 'full'))
+      .then(data => {
+        swapFrontline(data, 'full');
+        warmAll();
+      })
       .catch(err => {
         console.error('Failed to load frontline:', err);
         setFrontlineLabel('snapshot unavailable');

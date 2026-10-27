@@ -1,5 +1,6 @@
 require('dotenv').config();
 const express = require('express');
+const compression = require('compression');
 const axios = require('axios');
 const RSSParser = require('rss-parser');
 const Database = require('better-sqlite3');
@@ -28,6 +29,7 @@ app.use('/api', rateLimit({
   message: { error: 'Too many requests, slow down' }
 }));
 
+app.use(compression());
 app.use(express.static(path.join(__dirname, 'public')));
 
 const dataDir = process.env.DATA_DIR ? path.resolve(process.env.DATA_DIR) : path.join(__dirname, 'data');
@@ -330,6 +332,7 @@ async function syncFrontline() {
           const tmpPath = path.join(frontlineDir, name + '.tmp');
           fs.writeFileSync(tmpPath, res.data);
           fs.renameSync(tmpPath, path.join(frontlineDir, name));
+          liteSnapshotPath(name);
           downloaded++;
         } catch (e) {
           console.log('Frontline: failed to download', name, '-', e.message);
@@ -362,6 +365,15 @@ function liteSnapshotPath(name) {
   } catch (err) {
     console.log('Frontline: could not simplify', name, '-', err.message);
     return null;
+  }
+}
+
+async function buildLiteSnapshots() {
+  const names = localFrontlineFiles().reverse();
+  for (const name of names) {
+    if (fs.existsSync(path.join(frontlineLiteDir, name))) continue;
+    liteSnapshotPath(name);
+    await new Promise(resolve => setImmediate(resolve));
   }
 }
 
@@ -799,8 +811,8 @@ loadPlaces();
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
-  syncFrontline();
+  syncFrontline().then(buildLiteSnapshots);
   refreshArchive();
   setInterval(refreshArchive, 60 * 60 * 1000);
-  setInterval(syncFrontline, 6 * 60 * 60 * 1000);
+  setInterval(() => syncFrontline().then(buildLiteSnapshots), 6 * 60 * 60 * 1000);
 });
