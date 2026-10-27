@@ -308,7 +308,9 @@ async function syncFrontline() {
       .filter(Boolean)
       .sort();
 
-    const missing = remote.filter(name => !have.has(name)).reverse();
+    const keepDays = Number(process.env.FRONTLINE_DAYS);
+    const wanted = keepDays > 0 ? remote.slice(-keepDays) : remote;
+    const missing = wanted.filter(name => !have.has(name)).reverse();
     if (!missing.length) {
       console.log(`Frontline: up to date (${have.size} snapshots on disk)`);
       return;
